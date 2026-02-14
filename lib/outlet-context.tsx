@@ -60,6 +60,31 @@ export const adminUsers: AdminUser[] = [
   },
 ]
 
+export type BrandItem = {
+  id: string
+  name: string
+}
+
+export type CategoryItem = {
+  id: string
+  name: string
+}
+
+const initialBrands: BrandItem[] = [
+  { id: "BRD-001", name: "Bridgestone" },
+  { id: "BRD-002", name: "GT Radial" },
+  { id: "BRD-003", name: "Dunlop" },
+  { id: "BRD-004", name: "Hankook" },
+  { id: "BRD-005", name: "Accelera" },
+  { id: "BRD-006", name: "IRC" },
+]
+
+const initialCategories: CategoryItem[] = [
+  { id: "CAT-001", name: "Ban Mobil" },
+  { id: "CAT-002", name: "Ban SUV" },
+  { id: "CAT-003", name: "Ban Motor" },
+]
+
 type OutletContextType = {
   currentUser: AdminUser | null
   setCurrentUser: (user: AdminUser | null) => void
@@ -69,6 +94,14 @@ type OutletContextType = {
   isSuperAdmin: boolean
   availableOutlets: Outlet[]
   logout: () => void
+  brands: BrandItem[]
+  addBrand: (name: string) => void
+  updateBrand: (id: string, name: string) => void
+  removeBrand: (id: string) => void
+  categories: CategoryItem[]
+  addCategory: (name: string) => void
+  updateCategory: (id: string, name: string) => void
+  removeCategory: (id: string) => void
 }
 
 const OutletContext = createContext<OutletContextType | undefined>(undefined)
@@ -130,6 +163,42 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     handleSetCurrentUser(null)
   }, [handleSetCurrentUser])
 
+  // Brands CRUD
+  const [brands, setBrands] = useState<BrandItem[]>(initialBrands)
+
+  const addBrand = useCallback((name: string) => {
+    setBrands((prev) => {
+      const nextNum = prev.length + 1
+      return [...prev, { id: `BRD-${String(nextNum).padStart(3, "0")}`, name }]
+    })
+  }, [])
+
+  const updateBrand = useCallback((id: string, name: string) => {
+    setBrands((prev) => prev.map((b) => (b.id === id ? { ...b, name } : b)))
+  }, [])
+
+  const removeBrand = useCallback((id: string) => {
+    setBrands((prev) => prev.filter((b) => b.id !== id))
+  }, [])
+
+  // Categories CRUD
+  const [categories, setCategories] = useState<CategoryItem[]>(initialCategories)
+
+  const addCategory = useCallback((name: string) => {
+    setCategories((prev) => {
+      const nextNum = prev.length + 1
+      return [...prev, { id: `CAT-${String(nextNum).padStart(3, "0")}`, name }]
+    })
+  }, [])
+
+  const updateCategory = useCallback((id: string, name: string) => {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name } : c)))
+  }, [])
+
+  const removeCategory = useCallback((id: string) => {
+    setCategories((prev) => prev.filter((c) => c.id !== id))
+  }, [])
+
   return (
     <OutletContext.Provider
       value={{
@@ -141,6 +210,14 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         availableOutlets,
         logout,
+        brands,
+        addBrand,
+        updateBrand,
+        removeBrand,
+        categories,
+        addCategory,
+        updateCategory,
+        removeCategory,
       }}
     >
       {children}

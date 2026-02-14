@@ -12,8 +12,8 @@ import {
   User,
   Store,
   Shield,
-  ChevronDown,
   Building2,
+  Tags,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,10 @@ export function AdminSidebar({
     { label: "Produk", href: "/admin/produk", icon: Package },
     { label: "Transaksi", href: "/admin/transaksi", icon: Receipt },
     ...(isSuperAdmin
-      ? [{ label: "Kelola Outlet", href: "/admin/outlets", icon: Building2 }]
+      ? [
+          { label: "Kelola Outlet", href: "/admin/outlets", icon: Building2 },
+          { label: "Kategori & Merek", href: "/admin/kategori-merek", icon: Tags },
+        ]
       : []),
   ]
 

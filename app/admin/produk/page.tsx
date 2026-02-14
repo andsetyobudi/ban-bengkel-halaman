@@ -148,8 +148,7 @@ const initialProducts: Product[] = [
   },
 ]
 
-const brands = ["Semua", "Bridgestone", "GT Radial", "Dunlop", "Hankook", "Accelera", "IRC"]
-const categories = ["Semua", "Ban Mobil", "Ban SUV", "Ban Motor"]
+
 
 type ProductForm = {
   name: string
@@ -183,7 +182,10 @@ function getTotalStock(stock: StockPerOutlet, outletId: string): number {
 }
 
 export default function ProdukPage() {
-  const { selectedOutletId, isSuperAdmin } = useOutlet()
+  const { selectedOutletId, isSuperAdmin, availableOutlets, brands: brandItems, categories: categoryItems } = useOutlet()
+
+  const brandNames = ["Semua", ...brandItems.map((b) => b.name)]
+  const categoryNames = ["Semua", ...categoryItems.map((c) => c.name)]
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [search, setSearch] = useState("")
   const [filterBrand, setFilterBrand] = useState("Semua")
@@ -348,7 +350,7 @@ export default function ProdukPage() {
                 <SelectValue placeholder="Merek" />
               </SelectTrigger>
               <SelectContent>
-                {brands.map((b) => (
+                {brandNames.map((b) => (
                   <SelectItem key={b} value={b}>{b}</SelectItem>
                 ))}
               </SelectContent>
@@ -358,7 +360,7 @@ export default function ProdukPage() {
                 <SelectValue placeholder="Kategori" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((c) => (
+                {categoryNames.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
@@ -386,41 +388,44 @@ export default function ProdukPage() {
                       <span className="text-xs">{o.name}</span>
                     </TableHead>
                   ))}
-                  <TableHead className="w-24 text-center">Aksi</TableHead>
+                  {isSuperAdmin && (
+                    <TableHead className="w-24 text-center">Aksi</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8 + outlets.length} className="py-12 text-center text-muted-foreground">
+                    <TableCell colSpan={7 + outlets.length + (isSuperAdmin ? 1 : 0)} className="py-12 text-center text-muted-foreground">
                       Tidak ada produk ditemukan.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((product, index) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="text-center text-sm text-muted-foreground">{index + 1}</TableCell>
-                        <TableCell className="font-medium text-foreground">{product.name}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{product.code}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{product.brand}</Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{product.category}</TableCell>
-                        <TableCell className="text-right text-sm text-muted-foreground">{formatRupiah(product.costPrice)}</TableCell>
-                        <TableCell className="text-right font-medium text-foreground">{formatRupiah(product.sellPrice)}</TableCell>
-                        {outlets.map((o) => {
-                          const stk = product.stock[o.id] ?? 0
-                          return (
-                            <TableCell key={o.id} className="text-center">
-                              <Badge
-                                variant={stk <= 5 ? "destructive" : "default"}
-                                className={stk > 5 ? "bg-[hsl(142,70%,40%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(142,70%,35%)]" : ""}
-                              >
-                                {stk}
-                              </Badge>
-                            </TableCell>
-                          )
-                        })}
+                    <TableRow key={product.id}>
+                      <TableCell className="text-center text-sm text-muted-foreground">{index + 1}</TableCell>
+                      <TableCell className="font-medium text-foreground">{product.name}</TableCell>
+                      <TableCell className="font-mono text-sm text-muted-foreground">{product.code}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{product.brand}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{product.category}</TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">{formatRupiah(product.costPrice)}</TableCell>
+                      <TableCell className="text-right font-medium text-foreground">{formatRupiah(product.sellPrice)}</TableCell>
+                      {outlets.map((o) => {
+                        const stk = product.stock[o.id] ?? 0
+                        return (
+                          <TableCell key={o.id} className="text-center">
+                            <Badge
+                              variant={stk <= 5 ? "destructive" : "default"}
+                              className={stk > 5 ? "bg-[hsl(142,70%,40%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(142,70%,35%)]" : ""}
+                            >
+                              {stk}
+                            </Badge>
+                          </TableCell>
+                        )
+                      })}
+                      {isSuperAdmin && (
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
                             <button
@@ -439,9 +444,9 @@ export default function ProdukPage() {
                             </button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    )
-                  })
+                      )}
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -475,8 +480,8 @@ export default function ProdukPage() {
                 <Select value={form.brand} onValueChange={(v) => setForm({ ...form, brand: v })}>
                   <SelectTrigger id="prod-brand"><SelectValue placeholder="Pilih merek" /></SelectTrigger>
                   <SelectContent>
-                    {brands.filter((b) => b !== "Semua").map((b) => (
-                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    {brandItems.map((b) => (
+                      <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -486,8 +491,8 @@ export default function ProdukPage() {
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger id="prod-cat"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                   <SelectContent>
-                    {categories.filter((c) => c !== "Semua").map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    {categoryItems.map((c) => (
+                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -515,7 +520,7 @@ export default function ProdukPage() {
             <div className="flex flex-col gap-2">
               <Label>Stok per Outlet</Label>
               <div className="grid grid-cols-2 gap-3">
-                {outlets.map((outlet) => (
+                {availableOutlets.map((outlet) => (
                   <div key={outlet.id} className="flex flex-col gap-1">
                     <Label htmlFor={`stock-${outlet.id}`} className="text-xs text-muted-foreground">
                       {outlet.name}
