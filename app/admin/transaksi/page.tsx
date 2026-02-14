@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Filter, Eye, Calendar } from "lucide-react"
+import { Search, Filter, Eye, Calendar, Store } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Separator } from "@/components/ui/separator"
+import { useOutlet, outlets } from "@/lib/outlet-context"
 
 type Transaction = {
   id: string
@@ -20,6 +21,7 @@ type Transaction = {
   status: "Selesai" | "Proses" | "Batal"
   paymentMethod: string
   vehicle: string
+  outletId: string
 }
 
 const transactions: Transaction[] = [
@@ -33,6 +35,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Transfer BCA",
     vehicle: "Toyota Avanza 2021",
+    outletId: "OTL-001",
   },
   {
     id: "TRX-002",
@@ -47,6 +50,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Tunai",
     vehicle: "Honda Jazz 2019",
+    outletId: "OTL-001",
   },
   {
     id: "TRX-003",
@@ -58,6 +62,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "QRIS",
     vehicle: "Mitsubishi Xpander 2023",
+    outletId: "OTL-001",
   },
   {
     id: "TRX-004",
@@ -72,6 +77,7 @@ const transactions: Transaction[] = [
     status: "Proses",
     paymentMethod: "Tunai",
     vehicle: "Suzuki Ertiga 2020",
+    outletId: "OTL-001",
   },
   {
     id: "TRX-005",
@@ -83,6 +89,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Transfer Mandiri",
     vehicle: "Daihatsu Xenia 2018",
+    outletId: "OTL-001",
   },
   {
     id: "TRX-006",
@@ -98,6 +105,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Transfer BRI",
     vehicle: "Toyota Innova 2022",
+    outletId: "OTL-002",
   },
   {
     id: "TRX-007",
@@ -109,6 +117,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Tunai",
     vehicle: "Honda Brio 2020",
+    outletId: "OTL-002",
   },
   {
     id: "TRX-008",
@@ -120,6 +129,7 @@ const transactions: Transaction[] = [
     status: "Batal",
     paymentMethod: "-",
     vehicle: "Honda Vario 150",
+    outletId: "OTL-002",
   },
   {
     id: "TRX-009",
@@ -135,6 +145,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Transfer BCA",
     vehicle: "Toyota Fortuner 2023",
+    outletId: "OTL-002",
   },
   {
     id: "TRX-010",
@@ -148,6 +159,7 @@ const transactions: Transaction[] = [
     status: "Selesai",
     paymentMethod: "Tunai",
     vehicle: "Honda HRV 2021",
+    outletId: "OTL-001",
   },
 ]
 
@@ -175,12 +187,17 @@ function statusColor(status: string) {
 }
 
 export default function TransaksiPage() {
+  const { selectedOutletId } = useOutlet()
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState("Semua")
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
-  const filtered = transactions.filter((tx) => {
+  const outletFiltered = selectedOutletId === "all"
+    ? transactions
+    : transactions.filter((tx) => tx.outletId === selectedOutletId)
+
+  const filtered = outletFiltered.filter((tx) => {
     const matchSearch =
       tx.customer.toLowerCase().includes(search.toLowerCase()) ||
       tx.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -189,9 +206,13 @@ export default function TransaksiPage() {
     return matchSearch && matchStatus
   })
 
-  const totalRevenue = transactions.filter((t) => t.status === "Selesai").reduce((s, t) => s + t.total, 0)
-  const totalCount = transactions.filter((t) => t.status === "Selesai").length
-  const pendingCount = transactions.filter((t) => t.status === "Proses").length
+  const totalRevenue = outletFiltered.filter((t) => t.status === "Selesai").reduce((s, t) => s + t.total, 0)
+  const totalCount = outletFiltered.filter((t) => t.status === "Selesai").length
+  const pendingCount = outletFiltered.filter((t) => t.status === "Proses").length
+
+  const outletLabel = selectedOutletId === "all"
+    ? "Semua Outlet"
+    : outlets.find((o) => o.id === selectedOutletId)?.name || ""
 
   const openDetail = (tx: Transaction) => {
     setSelectedTx(tx)
@@ -203,7 +224,10 @@ export default function TransaksiPage() {
       {/* Header */}
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Riwayat Transaksi</h1>
-        <p className="text-sm text-muted-foreground">Lihat dan kelola semua transaksi CarProBan</p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Store className="h-3.5 w-3.5" />
+          <span>{outletLabel}</span>
+        </div>
       </div>
 
       {/* Stats Row */}

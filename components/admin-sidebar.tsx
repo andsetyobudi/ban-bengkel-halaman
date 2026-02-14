@@ -2,15 +2,24 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Receipt, LogOut, Home, X, User } from "lucide-react"
+import {
+  LayoutDashboard,
+  Package,
+  Receipt,
+  LogOut,
+  Home,
+  X,
+  User,
+  Store,
+  Shield,
+  ChevronDown,
+  Building2,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-
-const sidebarLinks = [
-  { label: "Ringkasan", href: "/admin", icon: LayoutDashboard },
-  { label: "Produk", href: "/admin/produk", icon: Package },
-  { label: "Transaksi", href: "/admin/transaksi", icon: Receipt },
-]
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { useOutlet, outlets } from "@/lib/outlet-context"
 
 export function AdminSidebar({
   open,
@@ -20,9 +29,26 @@ export function AdminSidebar({
   onClose: () => void
 }) {
   const pathname = usePathname()
+  const {
+    currentUser,
+    selectedOutletId,
+    setSelectedOutletId,
+    isSuperAdmin,
+    availableOutlets,
+    logout,
+  } = useOutlet()
+
+  const sidebarLinks = [
+    { label: "Ringkasan", href: "/admin", icon: LayoutDashboard },
+    { label: "Produk", href: "/admin/produk", icon: Package },
+    { label: "Transaksi", href: "/admin/transaksi", icon: Receipt },
+    ...(isSuperAdmin
+      ? [{ label: "Kelola Outlet", href: "/admin/outlets", icon: Building2 }]
+      : []),
+  ]
 
   const handleLogout = () => {
-    localStorage.removeItem("carproban_admin")
+    logout()
     window.location.href = "/admin/login"
   }
 
@@ -62,6 +88,42 @@ export function AdminSidebar({
           </button>
         </div>
 
+        {/* Outlet Switcher */}
+        <div className="border-b border-border px-3 py-3">
+          <p className="mb-1.5 px-1 text-xs font-medium text-muted-foreground">
+            {isSuperAdmin ? "Pilih Outlet" : "Outlet Anda"}
+          </p>
+          {isSuperAdmin ? (
+            <Select value={selectedOutletId} onValueChange={setSelectedOutletId}>
+              <SelectTrigger className="w-full text-xs">
+                <div className="flex items-center gap-2">
+                  <Store className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <SelectValue placeholder="Pilih outlet" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="font-medium">Semua Outlet</span>
+                </SelectItem>
+                {outlets
+                  .filter((o) => o.status === "active")
+                  .map((outlet) => (
+                    <SelectItem key={outlet.id} value={outlet.id}>
+                      {outlet.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
+              <Store className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate text-xs font-medium text-foreground">
+                {availableOutlets[0]?.name || "--"}
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4">
           <ul className="flex flex-col gap-1">
@@ -93,11 +155,32 @@ export function AdminSidebar({
           {/* Active admin info */}
           <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
-              <User className="h-4 w-4 text-primary-foreground" />
+              {isSuperAdmin ? (
+                <Shield className="h-4 w-4 text-primary-foreground" />
+              ) : (
+                <User className="h-4 w-4 text-primary-foreground" />
+              )}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">Admin</p>
-              <p className="truncate text-xs text-muted-foreground">admin@carproban.com</p>
+              <div className="flex items-center gap-1.5">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {currentUser?.name || "Admin"}
+                </p>
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "shrink-0 px-1.5 py-0 text-[10px]",
+                    isSuperAdmin
+                      ? "bg-primary/10 text-primary"
+                      : "bg-accent/30 text-accent-foreground"
+                  )}
+                >
+                  {isSuperAdmin ? "Super" : "Outlet"}
+                </Badge>
+              </div>
+              <p className="truncate text-xs text-muted-foreground">
+                {currentUser?.email || "admin@carproban.com"}
+              </p>
             </div>
           </div>
 

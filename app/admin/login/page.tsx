@@ -3,16 +3,23 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Shield, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { adminUsers, type AdminUser } from "@/lib/outlet-context"
+
+const credentials: Record<string, { password: string; userId: string }> = {
+  "admin": { password: "admin123", userId: "USR-001" },
+  "admin.bantul": { password: "admin123", userId: "USR-002" },
+  "admin.wiyoro": { password: "admin123", userId: "USR-003" },
+}
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -22,12 +29,23 @@ export default function AdminLoginPage() {
     setError("")
     setLoading(true)
 
-    // Temporary hardcoded credentials
-    if (email === "admin@carproban.com" && password === "admin123") {
-      localStorage.setItem("carproban_admin", "true")
-      router.push("/admin")
+    const cred = credentials[username]
+    if (cred && cred.password === password) {
+      const user = adminUsers.find((u) => u.id === cred.userId)
+      if (user) {
+        localStorage.setItem("carproban_admin", "true")
+        localStorage.setItem("carproban_user", JSON.stringify(user))
+        if (user.role === "outlet_admin" && user.outletId) {
+          localStorage.setItem("carproban_selected_outlet", user.outletId)
+        } else {
+          localStorage.setItem("carproban_selected_outlet", "all")
+        }
+        router.push("/admin")
+      } else {
+        setError("User tidak ditemukan.")
+      }
     } else {
-      setError("Email atau password salah. Gunakan: admin@carproban.com / admin123")
+      setError("Username atau password salah.")
     }
     setLoading(false)
   }
@@ -53,18 +71,18 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-xl">Login Admin</CardTitle>
-          <CardDescription>Masuk ke dashboard admin CarProBan</CardDescription>
+          <CardDescription>Masuk ke dashboard admin</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="admin@carproban.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
@@ -99,10 +117,24 @@ export default function AdminLoginPage() {
               {loading ? "Memproses..." : "Masuk"}
             </Button>
 
-            <div className="rounded-md bg-muted px-3 py-2">
-              <p className="text-center text-xs text-muted-foreground">
-                Akses sementara: <span className="font-medium text-foreground">admin@carproban.com</span> / <span className="font-medium text-foreground">admin123</span>
-              </p>
+            {/* Credential hints */}
+            <div className="flex flex-col gap-2 rounded-lg bg-muted p-3">
+              <p className="text-xs font-medium text-foreground">Akun Demo:</p>
+              <div className="flex items-start gap-2">
+                <Shield className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                <div>
+                  <p className="text-xs font-medium text-foreground">Super Admin</p>
+                  <p className="text-xs text-muted-foreground">admin / admin123</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Store className="mt-0.5 h-3 w-3 shrink-0 text-accent-foreground" />
+                <div>
+                  <p className="text-xs font-medium text-foreground">Admin Outlet</p>
+                  <p className="text-xs text-muted-foreground">admin.bantul / admin123</p>
+                  <p className="text-xs text-muted-foreground">admin.wiyoro / admin123</p>
+                </div>
+              </div>
             </div>
           </form>
         </CardContent>

@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
 import { AdminSidebar } from "@/components/admin-sidebar"
+import { OutletProvider } from "@/lib/outlet-context"
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -44,5 +45,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <OutletProvider>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </OutletProvider>
   )
 }
