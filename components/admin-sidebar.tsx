@@ -14,6 +14,12 @@ import {
   Shield,
   Building2,
   Tags,
+  ArrowLeftRight,
+  History,
+  Printer,
+  ShoppingCart,
+  CreditCard,
+  Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -38,14 +44,42 @@ export function AdminSidebar({
     logout,
   } = useOutlet()
 
-  const sidebarLinks = [
-    { label: "Ringkasan", href: "/admin", icon: LayoutDashboard },
-    { label: "Produk", href: "/admin/produk", icon: Package },
-    { label: "Transaksi", href: "/admin/transaksi", icon: Receipt },
+  const sidebarSections = [
+    {
+      title: null,
+      links: [
+        { label: "Ringkasan", href: "/admin", icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: "Stok & Inventaris",
+      links: [
+        { label: "Daftar Produk", href: "/admin/produk", icon: Package },
+        ...(!isSuperAdmin
+          ? [{ label: "Transfer Barang", href: "/admin/transfer", icon: ArrowLeftRight }]
+          : []),
+        { label: "Riwayat Transfer", href: "/admin/transfer/riwayat", icon: History },
+        { label: "Cetak Laporan", href: "/admin/laporan", icon: Printer },
+      ],
+    },
+    {
+      title: "Penjualan",
+      links: [
+        { label: "Transaksi Baru", href: "/admin/transaksi", icon: ShoppingCart },
+        { label: "Riwayat Transaksi", href: "/admin/transaksi/riwayat", icon: Receipt },
+        { label: "Manajemen Piutang", href: "/admin/piutang", icon: CreditCard },
+        { label: "Data Pelanggan", href: "/admin/pelanggan", icon: Users },
+      ],
+    },
     ...(isSuperAdmin
       ? [
-          { label: "Kelola Outlet", href: "/admin/outlets", icon: Building2 },
-          { label: "Kategori & Merek", href: "/admin/kategori-merek", icon: Tags },
+          {
+            title: "Master Data",
+            links: [
+              { label: "Kelola Outlet", href: "/admin/outlets", icon: Building2 },
+              { label: "Kategori & Merek", href: "/admin/kategori-merek", icon: Tags },
+            ],
+          },
         ]
       : []),
   ]
@@ -128,29 +162,40 @@ export function AdminSidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4">
-          <ul className="flex flex-col gap-1">
-            {sidebarLinks.map((link) => {
-              const isActive = pathname === link.href
-              return (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    onClick={onClose}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <link.icon className="h-4 w-4" />
-                    {link.label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="flex flex-col gap-5">
+            {sidebarSections.map((section, idx) => (
+              <div key={section.title ?? idx}>
+                {section.title && (
+                  <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {section.title}
+                  </p>
+                )}
+                <ul className="flex flex-col gap-0.5">
+                  {section.links.map((link) => {
+                    const isActive = pathname === link.href
+                    return (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          onClick={onClose}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          )}
+                        >
+                          <link.icon className="h-4 w-4" />
+                          {link.label}
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         </nav>
 
         {/* Footer: Admin info + actions */}

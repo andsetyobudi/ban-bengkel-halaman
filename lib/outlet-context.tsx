@@ -70,6 +70,170 @@ export type CategoryItem = {
   name: string
 }
 
+export type CustomerItem = {
+  id: string
+  name: string
+  phone: string
+  outletId: string
+}
+
+const initialCustomers: CustomerItem[] = [
+  { id: "CST-001", name: "Budi Santoso", phone: "081234567890", outletId: "OTL-001" },
+  { id: "CST-002", name: "Siti Rahayu", phone: "082345678901", outletId: "OTL-001" },
+  { id: "CST-003", name: "Ahmad Wijaya", phone: "083456789012", outletId: "OTL-002" },
+  { id: "CST-004", name: "Dewi Lestari", phone: "084567890123", outletId: "OTL-002" },
+  { id: "CST-005", name: "Eko Prasetyo", phone: "085678901234", outletId: "OTL-001" },
+]
+
+export type TransferItem = {
+  productId: string
+  productName: string
+  productCode: string
+  qty: number
+}
+
+export type TransferStatus = "pending" | "diterima" | "selesai"
+
+export type Transfer = {
+  id: string
+  fromOutletId: string
+  toOutletId: string
+  date: string
+  note: string
+  items: TransferItem[]
+  status: TransferStatus
+  createdAt: string
+}
+
+const initialTransfers: Transfer[] = [
+  {
+    id: "TRF-001",
+    fromOutletId: "OTL-001",
+    toOutletId: "OTL-002",
+    date: "2026-02-10",
+    note: "Restock ban mobil",
+    items: [
+      { productId: "P001", productName: "Ecopia EP150", productCode: "185/65R15", qty: 4 },
+      { productId: "P002", productName: "Champiro Eco", productCode: "175/65R14", qty: 2 },
+    ],
+    status: "selesai",
+    createdAt: "2026-02-10T08:00:00",
+  },
+  {
+    id: "TRF-002",
+    fromOutletId: "OTL-002",
+    toOutletId: "OTL-001",
+    date: "2026-02-12",
+    note: "Transfer ban SUV",
+    items: [
+      { productId: "P006", productName: "Turanza T005A", productCode: "215/60R17", qty: 2 },
+    ],
+    status: "diterima",
+    createdAt: "2026-02-12T10:30:00",
+  },
+  {
+    id: "TRF-003",
+    fromOutletId: "OTL-001",
+    toOutletId: "OTL-002",
+    date: "2026-02-14",
+    note: "",
+    items: [
+      { productId: "P005", productName: "PHI-R", productCode: "205/45R17", qty: 3 },
+      { productId: "P009", productName: "K415", productCode: "185/70R14", qty: 5 },
+    ],
+    status: "pending",
+    createdAt: "2026-02-14T09:15:00",
+  },
+]
+
+export type PiutangItem = {
+  id: string
+  invoice: string
+  date: string
+  customerId: string
+  customerName: string
+  nopol: string
+  total: number
+  paid: number
+  outletId: string
+  status: "belum_lunas" | "lunas"
+}
+
+const initialPiutang: PiutangItem[] = [
+  {
+    id: "PTG-001",
+    invoice: "INV-2026-0001",
+    date: "2026-02-01",
+    customerId: "CST-001",
+    customerName: "Budi Santoso",
+    nopol: "AB 1234 CD",
+    total: 2400000,
+    paid: 1000000,
+    outletId: "OTL-001",
+    status: "belum_lunas",
+  },
+  {
+    id: "PTG-002",
+    invoice: "INV-2026-0002",
+    date: "2026-02-03",
+    customerId: "CST-002",
+    customerName: "Siti Rahayu",
+    nopol: "AB 5678 EF",
+    total: 1800000,
+    paid: 1800000,
+    outletId: "OTL-001",
+    status: "lunas",
+  },
+  {
+    id: "PTG-003",
+    invoice: "INV-2026-0003",
+    date: "2026-02-05",
+    customerId: "CST-003",
+    customerName: "Ahmad Wijaya",
+    nopol: "AB 9012 GH",
+    total: 3200000,
+    paid: 500000,
+    outletId: "OTL-002",
+    status: "belum_lunas",
+  },
+  {
+    id: "PTG-004",
+    invoice: "INV-2026-0004",
+    date: "2026-02-08",
+    customerId: "CST-005",
+    customerName: "Eko Prasetyo",
+    nopol: "AB 3456 IJ",
+    total: 950000,
+    paid: 0,
+    outletId: "OTL-001",
+    status: "belum_lunas",
+  },
+  {
+    id: "PTG-005",
+    invoice: "INV-2026-0005",
+    date: "2026-02-10",
+    customerId: "CST-004",
+    customerName: "Dewi Lestari",
+    nopol: "AB 7890 KL",
+    total: 1500000,
+    paid: 1500000,
+    outletId: "OTL-002",
+    status: "lunas",
+  },
+  {
+    id: "PTG-006",
+    invoice: "INV-2026-0006",
+    date: "2026-02-12",
+    customerId: "CST-001",
+    customerName: "Budi Santoso",
+    nopol: "AB 1234 CD",
+    total: 4200000,
+    paid: 2000000,
+    outletId: "OTL-001",
+    status: "belum_lunas",
+  },
+]
+
 const initialBrands: BrandItem[] = [
   { id: "BRD-001", name: "Bridgestone" },
   { id: "BRD-002", name: "GT Radial" },
@@ -102,6 +266,15 @@ type OutletContextType = {
   addCategory: (name: string) => void
   updateCategory: (id: string, name: string) => void
   removeCategory: (id: string) => void
+  customers: CustomerItem[]
+  addCustomer: (name: string, phone: string, outletId: string) => void
+  updateCustomer: (id: string, name: string, phone: string, outletId: string) => void
+  removeCustomer: (id: string) => void
+  transfers: Transfer[]
+  addTransfer: (fromOutletId: string, toOutletId: string, date: string, note: string, items: TransferItem[]) => void
+  updateTransferStatus: (id: string, status: TransferStatus) => void
+  piutang: PiutangItem[]
+  lunaskanPiutang: (id: string) => void
 }
 
 const OutletContext = createContext<OutletContextType | undefined>(undefined)
@@ -181,6 +354,61 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     setBrands((prev) => prev.filter((b) => b.id !== id))
   }, [])
 
+  // Customers CRUD
+  const [customers, setCustomers] = useState<CustomerItem[]>(initialCustomers)
+
+  const addCustomer = useCallback((name: string, phone: string, outletId: string) => {
+    setCustomers((prev) => {
+      const nextNum = prev.length + 1
+      return [...prev, { id: `CST-${String(nextNum).padStart(3, "0")}`, name, phone, outletId }]
+    })
+  }, [])
+
+  const updateCustomer = useCallback((id: string, name: string, phone: string, outletId: string) => {
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, name, phone, outletId } : c)))
+  }, [])
+
+  const removeCustomer = useCallback((id: string) => {
+    setCustomers((prev) => prev.filter((c) => c.id !== id))
+  }, [])
+
+  // Transfer CRUD
+  const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers)
+
+  const addTransfer = useCallback((fromOutletId: string, toOutletId: string, date: string, note: string, items: TransferItem[]) => {
+    setTransfers((prev) => {
+      const nextNum = prev.length + 1
+      return [
+        ...prev,
+        {
+          id: `TRF-${String(nextNum).padStart(3, "0")}`,
+          fromOutletId,
+          toOutletId,
+          date,
+          note,
+          items,
+          status: "pending" as TransferStatus,
+          createdAt: new Date().toISOString(),
+        },
+      ]
+    })
+  }, [])
+
+  const updateTransferStatus = useCallback((id: string, status: TransferStatus) => {
+    setTransfers((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)))
+  }, [])
+
+  // Piutang CRUD
+  const [piutang, setPiutang] = useState<PiutangItem[]>(initialPiutang)
+
+  const lunaskanPiutang = useCallback((id: string) => {
+    setPiutang((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, paid: p.total, status: "lunas" as const } : p
+      )
+    )
+  }, [])
+
   // Categories CRUD
   const [categories, setCategories] = useState<CategoryItem[]>(initialCategories)
 
@@ -218,6 +446,15 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         addCategory,
         updateCategory,
         removeCategory,
+        customers,
+        addCustomer,
+        updateCustomer,
+        removeCustomer,
+        transfers,
+        addTransfer,
+        updateTransferStatus,
+        piutang,
+        lunaskanPiutang,
       }}
     >
       {children}
