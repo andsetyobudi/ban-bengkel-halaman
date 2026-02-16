@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useOutlet, outlets } from "@/lib/outlet-context"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import type { TransactionItem, PaymentMethodType, PaymentEntry } from "@/lib/outlet-context"
 
 // Product data for selection
@@ -194,6 +195,11 @@ export default function TransaksiBaruPage() {
       note,
       outletId,
       status: "Selesai",
+    })
+
+    toast.success("Transaksi berhasil disimpan!", {
+      description: `${invoice} - ${customerName} | Total: ${formatRupiah(total)}`,
+      duration: 4000,
     })
 
     router.push("/admin/transaksi/riwayat")
@@ -931,6 +937,8 @@ function StepPembayaran({
                         const updated = [...multiPayments]
                         updated[idx] = { ...updated[idx], amount: Number(e.target.value) }
                         setMultiPayments(updated)
+                        const sum = updated.reduce((s, p) => s + (p.amount || 0), 0)
+                        setNominalBayar(sum || "")
                       }}
                       placeholder="Nominal"
                       className="h-9 text-right"
@@ -954,7 +962,11 @@ function StepPembayaran({
                 value={nominalBayar}
                 onChange={(e) => setNominalBayar(e.target.value ? Number(e.target.value) : "")}
                 placeholder="Masukkan nominal pembayaran"
-                className="h-10 rounded-l-none text-right text-lg font-semibold"
+                readOnly={paymentType === "campuran"}
+                className={cn(
+                  "h-10 rounded-l-none text-right text-lg font-semibold",
+                  paymentType === "campuran" && "bg-muted cursor-not-allowed"
+                )}
               />
             </div>
           </div>

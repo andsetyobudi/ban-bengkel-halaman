@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { OutletProvider } from "@/lib/outlet-context"
+import { Toaster } from "@/components/ui/sonner"
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -52,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <OutletProvider>
       <AdminLayoutInner>{children}</AdminLayoutInner>
+      <Toaster richColors position="top-center" />
     </OutletProvider>
   )
 }

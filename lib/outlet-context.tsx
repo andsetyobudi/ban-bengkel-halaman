@@ -430,6 +430,7 @@ type OutletContextType = {
   lunaskanPiutang: (id: string) => void
   transactions: TransactionRecord[]
   addTransaction: (tx: Omit<TransactionRecord, "id">) => TransactionRecord
+  removeTransaction: (id: string) => void
   nextInvoiceNumber: () => string
 }
 
@@ -602,6 +603,10 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     return newTx
   }, [transactions.length])
 
+  const removeTransaction = useCallback((id: string) => {
+    setTransactions((prev) => prev.filter((t) => t.id !== id))
+  }, [])
+
   // Categories CRUD
   const [categories, setCategories] = useState<CategoryItem[]>(initialCategories)
 
@@ -650,6 +655,7 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         lunaskanPiutang,
         transactions,
         addTransaction,
+        removeTransaction,
         nextInvoiceNumber,
       }}
     >
