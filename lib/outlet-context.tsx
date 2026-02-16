@@ -234,6 +234,159 @@ const initialPiutang: PiutangItem[] = [
   },
 ]
 
+export type PaymentMethodType = "tunai" | "qris" | "debit_kredit" | "piutang"
+
+export type PaymentEntry = {
+  method: PaymentMethodType
+  amount: number
+}
+
+export type TransactionItem = {
+  name: string
+  price: number
+  qty: number
+}
+
+export type TransactionRecord = {
+  id: string
+  invoice: string
+  date: string
+  customerName: string
+  customerPhone: string
+  nopol: string
+  vehicle: string
+  items: TransactionItem[]
+  subtotal: number
+  discount: number
+  total: number
+  paymentType: "penuh" | "campuran"
+  payments: PaymentEntry[]
+  nominalBayar: number
+  sisa: number
+  isPiutang: boolean
+  note: string
+  outletId: string
+  status: "Selesai" | "Proses" | "Batal"
+}
+
+const initialTransactions: TransactionRecord[] = [
+  {
+    id: "TRX-001",
+    invoice: "INV-2026-0001",
+    date: "2026-02-14",
+    customerName: "Ahmad Rizky",
+    customerPhone: "0812-3456-7890",
+    nopol: "AB 1234 CD",
+    vehicle: "Toyota Avanza 2021",
+    items: [{ name: "Bridgestone Ecopia EP150 195/65R15", qty: 2, price: 750000 }],
+    subtotal: 1500000,
+    discount: 0,
+    total: 1500000,
+    paymentType: "penuh",
+    payments: [{ method: "qris", amount: 1500000 }],
+    nominalBayar: 1500000,
+    sisa: 0,
+    isPiutang: false,
+    note: "",
+    outletId: "OTL-001",
+    status: "Selesai",
+  },
+  {
+    id: "TRX-002",
+    invoice: "INV-2026-0002",
+    date: "2026-02-14",
+    customerName: "Siti Nurhaliza",
+    customerPhone: "0856-1234-5678",
+    nopol: "AB 5678 EF",
+    vehicle: "Honda Jazz 2019",
+    items: [
+      { name: "Tambal Ban Tubeless", qty: 1, price: 50000 },
+      { name: "Balancing", qty: 1, price: 70000 },
+    ],
+    subtotal: 120000,
+    discount: 0,
+    total: 120000,
+    paymentType: "penuh",
+    payments: [{ method: "tunai", amount: 120000 }],
+    nominalBayar: 120000,
+    sisa: 0,
+    isPiutang: false,
+    note: "",
+    outletId: "OTL-001",
+    status: "Selesai",
+  },
+  {
+    id: "TRX-003",
+    invoice: "INV-2026-0003",
+    date: "2026-02-13",
+    customerName: "Budi Santoso",
+    customerPhone: "0878-9012-3456",
+    nopol: "AB 9012 GH",
+    vehicle: "Mitsubishi Xpander 2023",
+    items: [{ name: "GT Radial Champiro Eco 205/55R16", qty: 4, price: 800000 }],
+    subtotal: 3200000,
+    discount: 0,
+    total: 3200000,
+    paymentType: "penuh",
+    payments: [{ method: "qris", amount: 3200000 }],
+    nominalBayar: 3200000,
+    sisa: 0,
+    isPiutang: false,
+    note: "",
+    outletId: "OTL-001",
+    status: "Selesai",
+  },
+  {
+    id: "TRX-004",
+    invoice: "INV-2026-0004",
+    date: "2026-02-13",
+    customerName: "Dewi Lestari",
+    customerPhone: "0813-5678-1234",
+    nopol: "AB 3456 IJ",
+    vehicle: "Suzuki Ertiga 2020",
+    items: [
+      { name: "Spooring", qty: 1, price: 150000 },
+      { name: "Balancing", qty: 4, price: 25000 },
+    ],
+    subtotal: 250000,
+    discount: 0,
+    total: 250000,
+    paymentType: "penuh",
+    payments: [{ method: "tunai", amount: 250000 }],
+    nominalBayar: 250000,
+    sisa: 0,
+    isPiutang: false,
+    note: "",
+    outletId: "OTL-001",
+    status: "Selesai",
+  },
+  {
+    id: "TRX-005",
+    invoice: "INV-2026-0005",
+    date: "2026-02-12",
+    customerName: "Rina Wijaya",
+    customerPhone: "0857-6789-0123",
+    nopol: "AB 7890 KL",
+    vehicle: "Toyota Innova 2022",
+    items: [
+      { name: "Hankook Kinergy EX 205/55R16", qty: 4, price: 720000 },
+      { name: "Balancing", qty: 4, price: 25000 },
+      { name: "Spooring", qty: 1, price: 150000 },
+    ],
+    subtotal: 3030000,
+    discount: 0,
+    total: 3030000,
+    paymentType: "penuh",
+    payments: [{ method: "debit_kredit", amount: 3030000 }],
+    nominalBayar: 3030000,
+    sisa: 0,
+    isPiutang: false,
+    note: "",
+    outletId: "OTL-002",
+    status: "Selesai",
+  },
+]
+
 const initialBrands: BrandItem[] = [
   { id: "BRD-001", name: "Bridgestone" },
   { id: "BRD-002", name: "GT Radial" },
@@ -275,6 +428,9 @@ type OutletContextType = {
   updateTransferStatus: (id: string, status: TransferStatus) => void
   piutang: PiutangItem[]
   lunaskanPiutang: (id: string) => void
+  transactions: TransactionRecord[]
+  addTransaction: (tx: Omit<TransactionRecord, "id">) => TransactionRecord
+  nextInvoiceNumber: () => string
 }
 
 const OutletContext = createContext<OutletContextType | undefined>(undefined)
@@ -409,6 +565,43 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  // Transactions
+  const [transactions, setTransactions] = useState<TransactionRecord[]>(initialTransactions)
+
+  const nextInvoiceNumber = useCallback(() => {
+    const year = new Date().getFullYear()
+    const count = transactions.length + 1
+    return `INV-${year}-${String(count).padStart(4, "0")}`
+  }, [transactions.length])
+
+  const addTransaction = useCallback((tx: Omit<TransactionRecord, "id">) => {
+    const id = `TRX-${String(transactions.length + 1).padStart(3, "0")}`
+    const newTx: TransactionRecord = { ...tx, id }
+    setTransactions((prev) => [newTx, ...prev])
+
+    // Auto-create piutang if payment is less than total
+    if (tx.isPiutang && tx.sisa > 0) {
+      const piutangId = `PTG-${String(Date.now()).slice(-6)}`
+      setPiutang((prev) => [
+        ...prev,
+        {
+          id: piutangId,
+          invoice: tx.invoice,
+          date: tx.date,
+          customerId: "",
+          customerName: tx.customerName,
+          nopol: tx.nopol,
+          total: tx.total,
+          paid: tx.nominalBayar,
+          outletId: tx.outletId,
+          status: "belum_lunas" as const,
+        },
+      ])
+    }
+
+    return newTx
+  }, [transactions.length])
+
   // Categories CRUD
   const [categories, setCategories] = useState<CategoryItem[]>(initialCategories)
 
@@ -455,6 +648,9 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         updateTransferStatus,
         piutang,
         lunaskanPiutang,
+        transactions,
+        addTransaction,
+        nextInvoiceNumber,
       }}
     >
       {children}

@@ -105,29 +105,50 @@ export function AdminSidebar({
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <Link href="/admin" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">C</span>
+        {/* Header: Admin Info */}
+        <div className="border-b border-border p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary">
+                {isSuperAdmin ? (
+                  <Shield className="h-4 w-4 text-primary-foreground" />
+                ) : (
+                  <User className="h-4 w-4 text-primary-foreground" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground leading-tight">
+                  {currentUser?.name || "Admin"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground mt-0.5">
+                  {currentUser?.email || "admin@carproban.com"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-heading text-sm font-bold text-foreground">CarProBan</p>
-              <p className="text-xs text-muted-foreground">Admin Panel</p>
-            </div>
-          </Link>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 text-muted-foreground hover:text-foreground lg:hidden"
-            aria-label="Tutup sidebar"
+            <button
+              onClick={onClose}
+              className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-foreground lg:hidden"
+              aria-label="Tutup sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <Badge
+            variant="secondary"
+            className={cn(
+              "mt-2.5 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5",
+              isSuperAdmin
+                ? "bg-primary/10 text-primary"
+                : "bg-accent/30 text-accent-foreground"
+            )}
           >
-            <X className="h-5 w-5" />
-          </button>
+            {isSuperAdmin ? "Super Admin" : "Admin Outlet"}
+          </Badge>
         </div>
 
         {/* Outlet Switcher */}
-        <div className="border-b border-border px-3 py-3">
-          <p className="mb-1.5 px-1 text-xs font-medium text-muted-foreground">
+        <div className="border-b border-border px-4 py-3">
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {isSuperAdmin ? "Pilih Outlet" : "Outlet Anda"}
           </p>
           {isSuperAdmin ? (
@@ -162,12 +183,12 @@ export function AdminSidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="flex flex-col gap-5">
+        <nav className="flex-1 overflow-y-auto px-4 py-3">
+          <div className="flex flex-col gap-4">
             {sidebarSections.map((section, idx) => (
               <div key={section.title ?? idx}>
                 {section.title && (
-                  <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     {section.title}
                   </p>
                 )}
@@ -198,53 +219,21 @@ export function AdminSidebar({
           </div>
         </nav>
 
-        {/* Footer: Admin info + actions */}
-        <div className="border-t border-border px-3 py-4">
-          {/* Active admin info */}
-          <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
-              {isSuperAdmin ? (
-                <Shield className="h-4 w-4 text-primary-foreground" />
-              ) : (
-                <User className="h-4 w-4 text-primary-foreground" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {currentUser?.name || "Admin"}
-                </p>
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "shrink-0 px-1.5 py-0 text-[10px]",
-                    isSuperAdmin
-                      ? "bg-primary/10 text-primary"
-                      : "bg-accent/30 text-accent-foreground"
-                  )}
-                >
-                  {isSuperAdmin ? "Super" : "Outlet"}
-                </Badge>
-              </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {currentUser?.email || "admin@carproban.com"}
-              </p>
-            </div>
-          </div>
-
-          <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" asChild>
+        {/* Footer */}
+        <div className="flex flex-col gap-0.5 border-t border-border px-4 py-3">
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" asChild>
             <Link href="/">
-              <Home className="mr-3 h-4 w-4" />
+              <Home className="h-4 w-4" />
               Halaman Utama
             </Link>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={handleLogout}
           >
-            <LogOut className="mr-3 h-4 w-4" />
+            <LogOut className="h-4 w-4" />
             Keluar
           </Button>
         </div>
