@@ -41,38 +41,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useOutlet, outlets, type TransferItem } from "@/lib/outlet-context"
-
-type StockPerOutlet = Record<string, number>
-
-type Product = {
-  id: string
-  name: string
-  code: string
-  brand: string
-  category: string
-  costPrice: number
-  sellPrice: number
-  stock: StockPerOutlet
-}
-
-const allProducts: Product[] = [
-  { id: "P001", name: "Ecopia EP150", code: "185/65R15", brand: "Bridgestone", category: "Ban Mobil", costPrice: 600000, sellPrice: 750000, stock: { "OTL-001": 24, "OTL-002": 12 } },
-  { id: "P002", name: "Champiro Eco", code: "175/65R14", brand: "GT Radial", category: "Ban Mobil", costPrice: 400000, sellPrice: 520000, stock: { "OTL-001": 18, "OTL-002": 10 } },
-  { id: "P003", name: "Enasave EC300+", code: "195/60R16", brand: "Dunlop", category: "Ban Mobil", costPrice: 700000, sellPrice: 880000, stock: { "OTL-001": 12, "OTL-002": 8 } },
-  { id: "P004", name: "Kinergy EX", code: "205/55R16", brand: "Hankook", category: "Ban Mobil", costPrice: 560000, sellPrice: 720000, stock: { "OTL-001": 15, "OTL-002": 6 } },
-  { id: "P005", name: "PHI-R", code: "205/45R17", brand: "Accelera", category: "Ban Mobil", costPrice: 480000, sellPrice: 650000, stock: { "OTL-001": 10, "OTL-002": 20 } },
-  { id: "P006", name: "Turanza T005A", code: "215/60R17", brand: "Bridgestone", category: "Ban SUV", costPrice: 980000, sellPrice: 1250000, stock: { "OTL-001": 4, "OTL-002": 8 } },
-  { id: "P007", name: "Savero SUV", code: "225/65R17", brand: "GT Radial", category: "Ban SUV", costPrice: 720000, sellPrice: 950000, stock: { "OTL-001": 6, "OTL-002": 10 } },
-  { id: "P008", name: "AT3", code: "265/65R17", brand: "Dunlop", category: "Ban SUV", costPrice: 1100000, sellPrice: 1450000, stock: { "OTL-001": 3, "OTL-002": 6 } },
-  { id: "P009", name: "K415", code: "185/70R14", brand: "Hankook", category: "Ban Mobil", costPrice: 360000, sellPrice: 480000, stock: { "OTL-001": 22, "OTL-002": 14 } },
-  { id: "P010", name: "Techno Sport", code: "195/50R16", brand: "Accelera", category: "Ban Mobil", costPrice: 420000, sellPrice: 580000, stock: { "OTL-001": 8, "OTL-002": 14 } },
-  { id: "P011", name: "Ban Dalam Motor", code: "70/90-17", brand: "IRC", category: "Ban Motor", costPrice: 30000, sellPrice: 45000, stock: { "OTL-001": 50, "OTL-002": 30 } },
-  { id: "P012", name: "NR76 Tubeless", code: "80/90-17", brand: "IRC", category: "Ban Motor", costPrice: 120000, sellPrice: 165000, stock: { "OTL-001": 30, "OTL-002": 20 } },
-]
+import { useOutlet, type TransferItem, type ProductItem } from "@/lib/outlet-context"
+import { toast } from "sonner"
 
 export default function TransferBarangPage() {
-  const { addTransfer, isSuperAdmin, selectedOutletId } = useOutlet()
+  const { addTransfer, isSuperAdmin, selectedOutletId, outlets, products, currentUser, setTransfers } = useOutlet()
   const router = useRouter()
 
   // Super admin tidak bisa akses halaman transfer barang
@@ -115,13 +88,13 @@ export default function TransferBarangPage() {
   // Success dialog
   const [successOpen, setSuccessOpen] = useState(false)
 
-  // Products available at source outlet
+  // Products available at source outlet (from database)
   const availableProducts = useMemo(() => {
     if (!fromOutletId || fromOutletId === "all") return []
-    return allProducts
+    return products
       .filter((p) => (p.stock[fromOutletId] ?? 0) > 0)
       .filter((p) => !selectedItems.some((s) => s.productId === p.id))
-  }, [fromOutletId, selectedItems])
+  }, [fromOutletId, selectedItems, products])
 
   const filteredPickerProducts = availableProducts.filter(
     (p) =>
@@ -132,7 +105,7 @@ export default function TransferBarangPage() {
 
   const destinationOutlets = outlets.filter((o) => o.id !== fromOutletId && o.status === "active")
 
-  const handleAddProduct = (product: Product) => {
+  const handleAddProduct = (product: ProductItem) => {
     const maxStock = product.stock[fromOutletId] ?? 0
     setSelectedItems((prev) => [
       ...prev,
@@ -163,17 +136,55 @@ export default function TransferBarangPage() {
   }
 
   const isValid = fromOutletId && fromOutletId !== "all" && toOutletId && date && selectedItems.length > 0
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = () => {
-    if (!isValid) return
-    const items: TransferItem[] = selectedItems.map(({ productId, productName, productCode, qty }) => ({
-      productId,
-      productName,
-      productCode,
-      qty,
-    }))
-    addTransfer(fromOutletId, toOutletId, date, note.trim(), items)
-    setSuccessOpen(true)
+  const handleSubmit = async () => {
+    if (!isValid || !currentUser) return
+    setSubmitting(true)
+    try {
+      const items: TransferItem[] = selectedItems.map(({ productId, productName, productCode, qty }) => ({
+        productId,
+        productName,
+        productCode,
+        qty,
+      }))
+      const res = await fetch("/api/admin/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromOutletId,
+          toOutletId,
+          date,
+          note: note.trim(),
+          items,
+          userId: currentUser.id,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal membuat transfer.")
+        setSubmitting(false)
+        return
+      }
+      addTransfer(fromOutletId, toOutletId, date, note.trim(), items)
+      toast.success("Transfer berhasil dibuat.")
+      fetch("/api/admin/initial-data")
+        .then((r) => r.json())
+        .then((refreshData) => {
+          if (!refreshData.error && Array.isArray(refreshData.transfers)) {
+            setTransfers(refreshData.transfers)
+          }
+        })
+        .catch(() => {})
+      setSuccessOpen(true)
+      setToOutletId("")
+      setDate(new Date().toISOString().split("T")[0])
+      setNote("")
+      setSelectedItems([])
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+    setSubmitting(false)
   }
 
   const handleSuccessClose = () => {
@@ -391,9 +402,9 @@ export default function TransferBarangPage() {
                 <Button variant="outline" onClick={handleReset}>
                   Reset
                 </Button>
-                <Button onClick={handleSubmit} disabled={!isValid}>
+                <Button onClick={handleSubmit} disabled={!isValid || submitting}>
                   <FileText className="mr-2 h-4 w-4" />
-                  Buat Transfer
+                  {submitting ? "Menyimpan..." : "Buat Transfer"}
                 </Button>
               </div>
             </div>

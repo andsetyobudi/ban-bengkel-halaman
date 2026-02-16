@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, Fragment } from "react"
 import { Search, Filter, Eye, Calendar, Store, CreditCard, Trash2, Printer, FileText, ReceiptText } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import { useOutlet, outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
 import { usePrintNota } from "@/components/print-nota"
 import type { TransactionRecord, PaymentMethodType } from "@/lib/outlet-context"
 
@@ -72,7 +72,7 @@ function statusColor(status: string) {
 }
 
 export default function RiwayatTransaksiPage() {
-  const { selectedOutletId, transactions, removeTransaction } = useOutlet()
+  const { selectedOutletId, outlets, transactions, removeTransaction } = useOutlet()
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState("Semua")
   const [detailOpen, setDetailOpen] = useState(false)
@@ -322,9 +322,9 @@ export default function RiwayatTransaksiPage() {
                     const dailyTotal = txs.filter((t) => t.status === "Selesai").reduce((s, t) => s + t.total, 0)
                     const dailyCount = txs.length
                     return (
-                      <>
+                      <Fragment key={date}>
                         {/* Date header row */}
-                        <TableRow key={`header-${date}`} className="bg-muted/50 hover:bg-muted/50">
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
                           <TableCell colSpan={4} className="py-2.5">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
@@ -403,7 +403,7 @@ export default function RiwayatTransaksiPage() {
                             </TableCell>
                           </TableRow>
                         ))}
-                      </>
+                      </Fragment>
                     )
                   })
                 )}

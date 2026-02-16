@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { useOutlet, outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
 import type { PiutangItem } from "@/lib/outlet-context"
 
 function formatCurrency(value: number) {
@@ -43,7 +43,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function PiutangPage() {
-  const { piutang, lunaskanPiutang, selectedOutletId, isSuperAdmin } = useOutlet()
+  const { piutang, lunaskanPiutang, selectedOutletId, isSuperAdmin, outlets } = useOutlet()
 
   const [search, setSearch] = useState("")
   const [confirmOpen, setConfirmOpen] = useState(false)

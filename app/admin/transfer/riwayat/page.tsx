@@ -41,9 +41,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useOutlet, outlets, type Transfer, type TransferStatus } from "@/lib/outlet-context"
+import { useOutlet, type Transfer, type TransferStatus } from "@/lib/outlet-context"
+import { toast } from "sonner"
 
-function getOutletName(id: string) {
+function getOutletName(id: string, outlets: { id: string; name: string }[]) {
   return outlets.find((o) => o.id === id)?.name ?? "-"
 }
 
@@ -79,7 +80,7 @@ function getStatusConfig(status: TransferStatus) {
 }
 
 export default function RiwayatTransferPage() {
-  const { transfers, updateTransferStatus, selectedOutletId, isSuperAdmin } = useOutlet()
+  const { transfers, updateTransferStatus, selectedOutletId, isSuperAdmin, outlets, currentUser, setTransfers, setProducts } = useOutlet()
 
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("Semua")
@@ -112,8 +113,8 @@ export default function RiwayatTransferPage() {
       if (!q) return true
       return (
         t.id.toLowerCase().includes(q) ||
-        getOutletName(t.fromOutletId).toLowerCase().includes(q) ||
-        getOutletName(t.toOutletId).toLowerCase().includes(q) ||
+        getOutletName(t.fromOutletId, outlets).toLowerCase().includes(q) ||
+        getOutletName(t.toOutletId, outlets).toLowerCase().includes(q) ||
         t.items.some(
           (i) =>
             i.productName.toLowerCase().includes(q) ||
@@ -133,15 +134,48 @@ export default function RiwayatTransferPage() {
     setConfirmOpen(true)
   }
 
-  const handleConfirm = () => {
-    if (!confirmAction) return
-    updateTransferStatus(confirmAction.transfer.id, confirmAction.newStatus)
-    setConfirmOpen(false)
-    setConfirmAction(null)
-    // Update the detail view if open
-    if (selectedTransfer?.id === confirmAction.transfer.id) {
-      setSelectedTransfer({ ...confirmAction.transfer, status: confirmAction.newStatus })
+  const [updating, setUpdating] = useState(false)
+
+  const handleConfirm = async () => {
+    if (!confirmAction || !currentUser) return
+    setUpdating(true)
+    try {
+      const res = await fetch(`/api/admin/transfer/${confirmAction.transfer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: confirmAction.newStatus,
+          userId: currentUser.id,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal mengubah status transfer.")
+        setUpdating(false)
+        return
+      }
+      updateTransferStatus(confirmAction.transfer.id, confirmAction.newStatus)
+      toast.success("Status transfer berhasil diubah.")
+      setConfirmOpen(false)
+      setConfirmAction(null)
+      if (selectedTransfer?.id === confirmAction.transfer.id) {
+        setSelectedTransfer({ ...selectedTransfer, status: confirmAction.newStatus })
+      }
+      if (confirmAction.newStatus === "selesai") {
+        fetch("/api/admin/initial-data")
+          .then((r) => r.json())
+          .then((refreshData) => {
+            if (!refreshData.error) {
+              if (Array.isArray(refreshData.transfers)) setTransfers(refreshData.transfers)
+              if (Array.isArray(refreshData.products)) setProducts(refreshData.products)
+            }
+          })
+          .catch(() => {})
+      }
+    } catch {
+      toast.error("Koneksi gagal.")
     }
+    setUpdating(false)
   }
 
   // Check if user is the destination outlet (can accept/complete)
@@ -276,13 +310,13 @@ export default function RiwayatTransferPage() {
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <Store className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{getOutletName(transfer.fromOutletId)}</span>
+                            <span className="truncate">{getOutletName(transfer.fromOutletId, outlets)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <Store className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{getOutletName(transfer.toOutletId)}</span>
+                            <span className="truncate">{getOutletName(transfer.toOutletId, outlets)}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
@@ -362,7 +396,7 @@ export default function RiwayatTransferPage() {
                       <Store className="h-5 w-5 text-muted-foreground" />
                       <p className="text-xs text-muted-foreground">Dari</p>
                       <p className="text-sm font-medium text-foreground">
-                        {getOutletName(selectedTransfer.fromOutletId)}
+                        {getOutletName(selectedTransfer.fromOutletId, outlets)}
                       </p>
                     </div>
                     <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
@@ -370,7 +404,7 @@ export default function RiwayatTransferPage() {
                       <Store className="h-5 w-5 text-muted-foreground" />
                       <p className="text-xs text-muted-foreground">Ke</p>
                       <p className="text-sm font-medium text-foreground">
-                        {getOutletName(selectedTransfer.toOutletId)}
+                        {getOutletName(selectedTransfer.toOutletId, outlets)}
                       </p>
                     </div>
                   </div>
@@ -398,13 +432,14 @@ export default function RiwayatTransferPage() {
                 </div>
               </div>
 
-              {/* Items */}
+              {/* Items - judul fixed, hanya isi tabel yang scroll */}
               <div>
                 <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-foreground">
                   <Package className="h-4 w-4" />
                   Daftar Produk
                 </p>
-                <div className="overflow-x-auto rounded-lg border">
+                <div className="rounded-lg border">
+                  {/* Judul kolom: tabel header saja, tidak di dalam scroll */}
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -414,25 +449,30 @@ export default function RiwayatTransferPage() {
                         <TableHead className="text-center">Qty</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {selectedTransfer.items.map((item, idx) => (
-                        <TableRow key={item.productId}>
-                          <TableCell className="text-center text-sm text-muted-foreground">
-                            {idx + 1}
-                          </TableCell>
-                          <TableCell className="text-sm font-medium text-foreground">
-                            {item.productName}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">
-                            {item.productCode}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="secondary">{item.qty}</Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
                   </Table>
+                  {/* Isi: hanya tabel body, di dalam scroll */}
+                  <div className="max-h-48 overflow-y-auto overflow-x-auto [&_table]:border-t-0">
+                    <Table>
+                      <TableBody>
+                        {selectedTransfer.items.map((item, idx) => (
+                          <TableRow key={item.productId}>
+                            <TableCell className="w-10 text-center text-sm text-muted-foreground">
+                              {idx + 1}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium text-foreground">
+                              {item.productName}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground">
+                              {item.productCode}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="secondary">{item.qty}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
                 <p className="mt-2 text-right text-sm text-muted-foreground">
                   Total: {selectedTransfer.items.reduce((s, i) => s + i.qty, 0)} unit
@@ -486,29 +526,31 @@ export default function RiwayatTransferPage() {
             </DialogTitle>
             <DialogDescription>
               {confirmAction?.newStatus === "diterima"
-                ? `Apakah Anda yakin ingin menerima transfer ${confirmAction?.transfer.id} dari ${getOutletName(confirmAction?.transfer.fromOutletId ?? "")}? Status akan berubah menjadi "Diterima".`
+                ? `Apakah Anda yakin ingin menerima transfer ${confirmAction?.transfer.id} dari ${getOutletName(confirmAction?.transfer.fromOutletId ?? "", outlets)}? Status akan berubah menjadi "Diterima".`
                 : `Apakah Anda yakin ingin menyelesaikan transfer ${confirmAction?.transfer.id}? Status akan berubah menjadi "Selesai" dan tidak dapat diubah lagi.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={updating}>
               Batal
             </Button>
             {confirmAction?.newStatus === "diterima" ? (
               <Button
                 onClick={handleConfirm}
+                disabled={updating}
                 className="bg-blue-600 text-[hsl(0,0%,100%)] hover:bg-blue-700"
               >
                 <PackageCheck className="mr-2 h-4 w-4" />
-                Terima
+                {updating ? "Memproses..." : "Terima"}
               </Button>
             ) : (
               <Button
                 onClick={handleConfirm}
+                disabled={updating}
                 className="bg-[hsl(142,70%,35%)] text-[hsl(0,0%,100%)] hover:bg-[hsl(142,70%,30%)]"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Selesai
+                {updating ? "Memproses..." : "Selesai"}
               </Button>
             )}
           </DialogFooter>

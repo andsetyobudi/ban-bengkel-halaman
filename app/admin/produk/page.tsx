@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Plus, Search, Pencil, Trash2, Filter, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,143 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useOutlet, outlets } from "@/lib/outlet-context"
-
-type StockPerOutlet = Record<string, number>
-
-type Product = {
-  id: string
-  name: string
-  code: string
-  brand: string
-  category: string
-  costPrice: number
-  sellPrice: number
-  stock: StockPerOutlet
-}
-
-const initialProducts: Product[] = [
-  {
-    id: "P001",
-    name: "Ecopia EP150",
-    code: "185/65R15",
-    brand: "Bridgestone",
-    category: "Ban Mobil",
-    costPrice: 600000,
-    sellPrice: 750000,
-    stock: { "OTL-001": 24, "OTL-002": 12 },
-  },
-  {
-    id: "P002",
-    name: "Champiro Eco",
-    code: "175/65R14",
-    brand: "GT Radial",
-    category: "Ban Mobil",
-    costPrice: 400000,
-    sellPrice: 520000,
-    stock: { "OTL-001": 18, "OTL-002": 10 },
-  },
-  {
-    id: "P003",
-    name: "Enasave EC300+",
-    code: "195/60R16",
-    brand: "Dunlop",
-    category: "Ban Mobil",
-    costPrice: 700000,
-    sellPrice: 880000,
-    stock: { "OTL-001": 12, "OTL-002": 8 },
-  },
-  {
-    id: "P004",
-    name: "Kinergy EX",
-    code: "205/55R16",
-    brand: "Hankook",
-    category: "Ban Mobil",
-    costPrice: 560000,
-    sellPrice: 720000,
-    stock: { "OTL-001": 15, "OTL-002": 6 },
-  },
-  {
-    id: "P005",
-    name: "PHI-R",
-    code: "205/45R17",
-    brand: "Accelera",
-    category: "Ban Mobil",
-    costPrice: 480000,
-    sellPrice: 650000,
-    stock: { "OTL-001": 10, "OTL-002": 20 },
-  },
-  {
-    id: "P006",
-    name: "Turanza T005A",
-    code: "215/60R17",
-    brand: "Bridgestone",
-    category: "Ban SUV",
-    costPrice: 980000,
-    sellPrice: 1250000,
-    stock: { "OTL-001": 4, "OTL-002": 8 },
-  },
-  {
-    id: "P007",
-    name: "Savero SUV",
-    code: "225/65R17",
-    brand: "GT Radial",
-    category: "Ban SUV",
-    costPrice: 720000,
-    sellPrice: 950000,
-    stock: { "OTL-001": 6, "OTL-002": 10 },
-  },
-  {
-    id: "P008",
-    name: "AT3",
-    code: "265/65R17",
-    brand: "Dunlop",
-    category: "Ban SUV",
-    costPrice: 1100000,
-    sellPrice: 1450000,
-    stock: { "OTL-001": 3, "OTL-002": 6 },
-  },
-  {
-    id: "P009",
-    name: "K415",
-    code: "185/70R14",
-    brand: "Hankook",
-    category: "Ban Mobil",
-    costPrice: 360000,
-    sellPrice: 480000,
-    stock: { "OTL-001": 22, "OTL-002": 14 },
-  },
-  {
-    id: "P010",
-    name: "Techno Sport",
-    code: "195/50R16",
-    brand: "Accelera",
-    category: "Ban Mobil",
-    costPrice: 420000,
-    sellPrice: 580000,
-    stock: { "OTL-001": 8, "OTL-002": 14 },
-  },
-  {
-    id: "P011",
-    name: "Ban Dalam Motor",
-    code: "70/90-17",
-    brand: "IRC",
-    category: "Ban Motor",
-    costPrice: 30000,
-    sellPrice: 45000,
-    stock: { "OTL-001": 50, "OTL-002": 30 },
-  },
-  {
-    id: "P012",
-    name: "NR76 Tubeless",
-    code: "80/90-17",
-    brand: "IRC",
-    category: "Ban Motor",
-    costPrice: 120000,
-    sellPrice: 165000,
-    stock: { "OTL-001": 30, "OTL-002": 20 },
-  },
-]
+import { useOutlet, type ProductItem, type StockPerOutlet } from "@/lib/outlet-context"
+import { toast } from "sonner"
 
 
 
@@ -167,7 +32,20 @@ const emptyForm: ProductForm = {
   category: "",
   costPrice: 0,
   sellPrice: 0,
-  stock: Object.fromEntries(outlets.map((o) => [o.id, 0])),
+  stock: {} as StockPerOutlet,
+}
+
+function getEmptyProduct(outlets: { id: string }[]): ProductItem {
+  return {
+    id: "",
+    name: emptyForm.name,
+    code: emptyForm.code,
+    brand: emptyForm.brand,
+    category: emptyForm.category,
+    costPrice: emptyForm.costPrice,
+    sellPrice: emptyForm.sellPrice,
+    stock: Object.fromEntries(outlets.map((o) => [o.id, 0])),
+  }
 }
 
 function formatRupiah(num: number) {
@@ -182,19 +60,29 @@ function getTotalStock(stock: StockPerOutlet, outletId: string): number {
 }
 
 export default function ProdukPage() {
-  const { selectedOutletId, isSuperAdmin, availableOutlets, brands: brandItems, categories: categoryItems } = useOutlet()
+  const { selectedOutletId, isSuperAdmin, availableOutlets, outlets, products, setProducts, brands: brandItems, categories: categoryItems } = useOutlet()
 
   const brandNames = ["Semua", ...brandItems.map((b) => b.name)]
   const categoryNames = ["Semua", ...categoryItems.map((c) => c.name)]
-  const [products, setProducts] = useState<Product[]>(initialProducts)
   const [search, setSearch] = useState("")
   const [filterBrand, setFilterBrand] = useState("Semua")
   const [filterCategory, setFilterCategory] = useState("Semua")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null)
+  const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null)
   const [form, setForm] = useState<ProductForm>(emptyForm)
+
+  const updateFormField = useCallback((field: keyof ProductForm, value: any) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }, [])
+
+  const updateStock = useCallback((outletId: string, value: number) => {
+    setForm((prev) => ({
+      ...prev,
+      stock: { ...prev.stock, [outletId]: value },
+    }))
+  }, [])
 
   const filtered = products.filter((p) => {
     const matchSearch =
@@ -208,11 +96,14 @@ export default function ProdukPage() {
 
   const openAdd = () => {
     setEditingProduct(null)
-    setForm(emptyForm)
+    setForm({
+      ...emptyForm,
+      stock: Object.fromEntries(outlets.map((o) => [o.id, 0])),
+    })
     setDialogOpen(true)
   }
 
-  const openEdit = (product: Product) => {
+  const openEdit = (product: ProductItem) => {
     setEditingProduct(product)
     setForm({
       name: product.name,
@@ -226,46 +117,98 @@ export default function ProdukPage() {
     setDialogOpen(true)
   }
 
-  const openDelete = (product: Product) => {
+  const openDelete = (product: ProductItem) => {
     setDeletingProduct(product)
     setDeleteDialogOpen(true)
   }
 
-  const handleSave = () => {
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
     if (!form.name || !form.brand || !form.category || !form.code) return
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id
-            ? { ...p, name: form.name, code: form.code, brand: form.brand, category: form.category, costPrice: form.costPrice, sellPrice: form.sellPrice, stock: { ...form.stock } }
-            : p
+    setSaving(true)
+    try {
+      if (editingProduct) {
+        const res = await fetch(`/api/admin/produk/${editingProduct.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            code: form.code,
+            brand: form.brand,
+            category: form.category,
+            costPrice: form.costPrice,
+            sellPrice: form.sellPrice,
+            stock: form.stock,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          toast.error(data.error ?? "Gagal menyimpan perubahan.")
+          setSaving(false)
+          return
+        }
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === editingProduct.id
+              ? { ...p, name: form.name, code: form.code, brand: form.brand, category: form.category, costPrice: form.costPrice, sellPrice: form.sellPrice, stock: { ...form.stock } }
+              : p
+          )
         )
-      )
-    } else {
-      const newId = "P" + String(products.length + 1).padStart(3, "0")
-      setProducts((prev) => [
-        ...prev,
-        {
-          id: newId,
-          name: form.name,
-          code: form.code,
-          brand: form.brand,
-          category: form.category,
-          costPrice: form.costPrice,
-          sellPrice: form.sellPrice,
-          stock: { ...form.stock },
-        },
-      ])
+        toast.success("Produk berhasil diubah.")
+      } else {
+        const res = await fetch("/api/admin/produk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            code: form.code,
+            brand: form.brand,
+            category: form.category,
+            costPrice: form.costPrice,
+            sellPrice: form.sellPrice,
+            stock: form.stock,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          toast.error(data.error ?? "Gagal menambah produk.")
+          setSaving(false)
+          return
+        }
+        if (data.product) {
+          setProducts((prev) => [...prev, data.product])
+          toast.success("Produk berhasil ditambahkan.")
+        }
+      }
+      setDialogOpen(false)
+    } catch {
+      toast.error("Koneksi gagal.")
     }
-    setDialogOpen(false)
+    setSaving(false)
   }
 
-  const handleDelete = () => {
-    if (deletingProduct) {
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!deletingProduct) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/produk/${deletingProduct.id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json()
+        toast.error(data.error ?? "Gagal menghapus produk.")
+        setDeleting(false)
+        return
+      }
       setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id))
+      toast.success("Produk berhasil dihapus.")
+      setDeleteDialogOpen(false)
+      setDeletingProduct(null)
+    } catch {
+      toast.error("Koneksi gagal.")
     }
-    setDeleteDialogOpen(false)
-    setDeletingProduct(null)
+    setDeleting(false)
   }
 
   const totalProducts = filtered.length
@@ -467,17 +410,17 @@ export default function ProdukPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-name">Nama Produk</Label>
-                <Input id="prod-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ecopia EP150" />
+                <Input id="prod-name" value={form.name} onChange={(e) => updateFormField("name", e.target.value)} placeholder="Ecopia EP150" />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-code">Kode/Ukuran</Label>
-                <Input id="prod-code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="185/65R15" />
+                <Input id="prod-code" value={form.code} onChange={(e) => updateFormField("code", e.target.value)} placeholder="185/65R15" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-brand">Merek</Label>
-                <Select value={form.brand} onValueChange={(v) => setForm({ ...form, brand: v })}>
+                <Select value={form.brand} onValueChange={(v) => updateFormField("brand", v)}>
                   <SelectTrigger id="prod-brand"><SelectValue placeholder="Pilih merek" /></SelectTrigger>
                   <SelectContent>
                     {brandItems.map((b) => (
@@ -488,7 +431,7 @@ export default function ProdukPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-cat">Kategori</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <Select value={form.category} onValueChange={(v) => updateFormField("category", v)}>
                   <SelectTrigger id="prod-cat"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                   <SelectContent>
                     {categoryItems.map((c) => (
@@ -501,11 +444,11 @@ export default function ProdukPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-cost">Harga Modal (Rp)</Label>
-                <Input id="prod-cost" type="number" value={form.costPrice || ""} onChange={(e) => setForm({ ...form, costPrice: Number(e.target.value) })} placeholder="600000" />
+                <Input id="prod-cost" type="number" value={form.costPrice || ""} onChange={(e) => updateFormField("costPrice", Number(e.target.value))} placeholder="600000" />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="prod-sell">Harga Jual (Rp)</Label>
-                <Input id="prod-sell" type="number" value={form.sellPrice || ""} onChange={(e) => setForm({ ...form, sellPrice: Number(e.target.value) })} placeholder="750000" />
+                <Input id="prod-sell" type="number" value={form.sellPrice || ""} onChange={(e) => updateFormField("sellPrice", Number(e.target.value))} placeholder="750000" />
               </div>
             </div>
             {form.sellPrice > 0 && form.costPrice > 0 && (
@@ -529,12 +472,7 @@ export default function ProdukPage() {
                       id={`stock-${outlet.id}`}
                       type="number"
                       value={form.stock[outlet.id] ?? 0}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          stock: { ...form.stock, [outlet.id]: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => updateStock(outlet.id, Number(e.target.value))}
                       placeholder="0"
                     />
                   </div>
@@ -544,7 +482,7 @@ export default function ProdukPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleSave}>{editingProduct ? "Simpan Perubahan" : "Tambah Produk"}</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? "Menyimpan..." : editingProduct ? "Simpan Perubahan" : "Tambah Produk"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -560,7 +498,7 @@ export default function ProdukPage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Batal</Button>
-            <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>{deleting ? "Menghapus..." : "Hapus"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import {
   DollarSign,
   Package,
@@ -12,200 +13,145 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useOutlet, outlets } from "@/lib/outlet-context"
-
-const outletData: Record<
-  string,
-  {
-    revenue: number
-    revenueChange: string
-    revenueUp: boolean
-    products: number
-    newProducts: number
-    transactions: number
-    transactionsChange: string
-    transactionsUp: boolean
-    avgPerDay: number
-    avgChange: string
-    avgUp: boolean
-    recentTransactions: {
-      id: string
-      customer: string
-      item: string
-      amount: string
-      date: string
-      status: string
-    }[]
-    topProducts: { name: string; sold: number; revenue: string }[]
-  }
-> = {
-  "OTL-001": {
-    revenue: 25350000,
-    revenueChange: "+15.2%",
-    revenueUp: true,
-    products: 58,
-    newProducts: 4,
-    transactions: 186,
-    transactionsChange: "+22.1%",
-    transactionsUp: true,
-    avgPerDay: 845000,
-    avgChange: "+5.3%",
-    avgUp: true,
-    recentTransactions: [
-      { id: "TRX-001", customer: "Ahmad Rizky", item: "Ban Bridgestone Ecopia 195/65R15", amount: "Rp 850.000", date: "14 Feb 2026", status: "Selesai" },
-      { id: "TRX-002", customer: "Siti Nurhaliza", item: "Tambal Ban Tubeless + Balancing", amount: "Rp 120.000", date: "14 Feb 2026", status: "Selesai" },
-      { id: "TRX-003", customer: "Budi Santoso", item: "Ban GT Radial Champiro 205/55R16 x4", amount: "Rp 3.200.000", date: "13 Feb 2026", status: "Selesai" },
-      { id: "TRX-004", customer: "Dewi Lestari", item: "Spooring + Balancing", amount: "Rp 250.000", date: "13 Feb 2026", status: "Proses" },
-      { id: "TRX-005", customer: "Joko Widodo", item: "Ban Dunlop Enasave 185/70R14 x2", amount: "Rp 1.400.000", date: "12 Feb 2026", status: "Selesai" },
-    ],
-    topProducts: [
-      { name: "Bridgestone Ecopia EP150", sold: 24, revenue: "Rp 18.000.000" },
-      { name: "GT Radial Champiro Eco", sold: 18, revenue: "Rp 10.800.000" },
-      { name: "Dunlop Enasave EC300+", sold: 15, revenue: "Rp 10.500.000" },
-      { name: "Hankook Kinergy EX", sold: 12, revenue: "Rp 8.640.000" },
-      { name: "Accelera PHI-R", sold: 10, revenue: "Rp 5.000.000" },
-    ],
-  },
-  "OTL-002": {
-    revenue: 12800000,
-    revenueChange: "+8.7%",
-    revenueUp: true,
-    products: 42,
-    newProducts: 2,
-    transactions: 98,
-    transactionsChange: "+12.4%",
-    transactionsUp: true,
-    avgPerDay: 426667,
-    avgChange: "-1.2%",
-    avgUp: false,
-    recentTransactions: [
-      { id: "TRX-101", customer: "Eko Prasetyo", item: "Ban Bridgestone Turanza 205/65R16", amount: "Rp 1.100.000", date: "14 Feb 2026", status: "Selesai" },
-      { id: "TRX-102", customer: "Rina Susanti", item: "Spooring + Balancing 4 Ban", amount: "Rp 300.000", date: "14 Feb 2026", status: "Proses" },
-      { id: "TRX-103", customer: "Andi Wijaya", item: "Ban GT Radial Savero SUV 225/65R17 x4", amount: "Rp 3.800.000", date: "13 Feb 2026", status: "Selesai" },
-      { id: "TRX-104", customer: "Maya Putri", item: "Tambal Ban Tubeless", amount: "Rp 50.000", date: "13 Feb 2026", status: "Selesai" },
-      { id: "TRX-105", customer: "Doni Setiawan", item: "Ban Dunlop AT3 265/65R17 x4", amount: "Rp 5.800.000", date: "12 Feb 2026", status: "Selesai" },
-    ],
-    topProducts: [
-      { name: "GT Radial Savero SUV", sold: 12, revenue: "Rp 11.400.000" },
-      { name: "Bridgestone Turanza", sold: 10, revenue: "Rp 11.000.000" },
-      { name: "Dunlop AT3", sold: 8, revenue: "Rp 11.600.000" },
-      { name: "Hankook Kinergy EX", sold: 6, revenue: "Rp 4.320.000" },
-      { name: "Accelera PHI-R", sold: 5, revenue: "Rp 2.500.000" },
-    ],
-  },
-}
+import { useOutlet } from "@/lib/outlet-context"
+import type { TransactionRecord } from "@/lib/outlet-context"
 
 function formatRupiah(num: number) {
   return "Rp " + num.toLocaleString("id-ID")
 }
 
-function getAggregatedData() {
-  const allOutlets = Object.values(outletData)
-  const totalRevenue = allOutlets.reduce((s, o) => s + o.revenue, 0)
-  const totalProducts = allOutlets.reduce((s, o) => s + o.products, 0)
-  const totalTransactions = allOutlets.reduce((s, o) => s + o.transactions, 0)
-  const avgPerDay = Math.round(totalRevenue / 30)
-  return { totalRevenue, totalProducts, totalTransactions, avgPerDay }
+function formatDateShort(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function getSummaryFromTransactions(
+  transactions: TransactionRecord[],
+  selectedOutletId: string,
+  productCount: number,
+  outlets: { id: string; name: string }[]
+) {
+  const filtered =
+    selectedOutletId === "all"
+      ? transactions
+      : transactions.filter((t) => t.outletId === selectedOutletId)
+
+  const completed = filtered.filter((t) => t.status === "Selesai")
+  const totalRevenue = completed.reduce((s, t) => s + t.total, 0)
+  const totalTransactions = filtered.length
+  const daysInMonth = 30
+  const avgPerDay = totalTransactions > 0 ? Math.round(totalRevenue / daysInMonth) : 0
+
+  const recentList = [...filtered]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 7)
+    .map((tx) => ({
+      id: tx.id,
+      customer: tx.customerName,
+      item: tx.items.map((i) => `${i.name}${i.qty > 1 ? ` x${i.qty}` : ""}`).join(", "),
+      amount: formatRupiah(tx.total),
+      date: formatDateShort(tx.date),
+      status: tx.status,
+      outletName: outlets.find((o) => o.id === tx.outletId)?.name ?? "",
+    }))
+
+  const itemAgg = new Map<string, { sold: number; revenue: number }>()
+  for (const tx of completed) {
+    for (const it of tx.items) {
+      const key = it.name
+      const cur = itemAgg.get(key) ?? { sold: 0, revenue: 0 }
+      itemAgg.set(key, {
+        sold: cur.sold + it.qty,
+        revenue: cur.revenue + it.qty * it.price,
+      })
+    }
+  }
+  const topProducts = [...itemAgg.entries()]
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .slice(0, 5)
+    .map(([name, data]) => ({ name, sold: data.sold, revenue: formatRupiah(data.revenue) }))
+
+  return {
+    totalRevenue,
+    totalTransactions,
+    productCount,
+    avgPerDay,
+    recentTransactions: recentList,
+    topProducts,
+  }
+}
+
+function getPerOutletSummary(
+  transactions: TransactionRecord[],
+  productCount: number,
+  outlets: { id: string; name: string; status: string }[]
+) {
+  return outlets.filter((o) => o.status === "active").map((outlet) => {
+    const data = getSummaryFromTransactions(transactions, outlet.id, productCount, outlets)
+    return {
+      outletId: outlet.id,
+      outlet,
+      ...data,
+    }
+  })
 }
 
 export default function AdminDashboardPage() {
-  const { selectedOutletId, isSuperAdmin, currentUser } = useOutlet()
+  const { selectedOutletId, isSuperAdmin, currentUser, transactions, products, outlets } = useOutlet()
 
   const isAllView = selectedOutletId === "all"
-  const currentData = !isAllView ? outletData[selectedOutletId] : null
-  const aggregated = getAggregatedData()
+  const productCount = products.length
 
-  const summaryCards = currentData
-    ? [
-        {
-          title: "Total Pendapatan",
-          value: formatRupiah(currentData.revenue),
-          change: currentData.revenueChange,
-          trend: currentData.revenueUp ? ("up" as const) : ("down" as const),
-          description: "dari bulan lalu",
-          icon: DollarSign,
-        },
-        {
-          title: "Total Produk",
-          value: String(currentData.products),
-          change: `+${currentData.newProducts}`,
-          trend: "up" as const,
-          description: "produk baru bulan ini",
-          icon: Package,
-        },
-        {
-          title: "Total Transaksi",
-          value: String(currentData.transactions),
-          change: currentData.transactionsChange,
-          trend: currentData.transactionsUp ? ("up" as const) : ("down" as const),
-          description: "dari bulan lalu",
-          icon: Receipt,
-        },
-        {
-          title: "Rata-rata/Hari",
-          value: formatRupiah(currentData.avgPerDay),
-          change: currentData.avgChange,
-          trend: currentData.avgUp ? ("up" as const) : ("down" as const),
-          description: "dari bulan lalu",
-          icon: TrendingUp,
-        },
-      ]
-    : [
-        {
-          title: "Total Pendapatan",
-          value: formatRupiah(aggregated.totalRevenue),
-          change: "+12.5%",
-          trend: "up" as const,
-          description: "dari bulan lalu",
-          icon: DollarSign,
-        },
-        {
-          title: "Total Produk",
-          value: String(aggregated.totalProducts),
-          change: "+6",
-          trend: "up" as const,
-          description: "produk baru bulan ini",
-          icon: Package,
-        },
-        {
-          title: "Total Transaksi",
-          value: String(aggregated.totalTransactions),
-          change: "+18.2%",
-          trend: "up" as const,
-          description: "dari bulan lalu",
-          icon: Receipt,
-        },
-        {
-          title: "Rata-rata/Hari",
-          value: formatRupiah(aggregated.avgPerDay),
-          change: "-3.1%",
-          trend: "down" as const,
-          description: "dari bulan lalu",
-          icon: TrendingUp,
-        },
-      ]
+  const summary = useMemo(
+    () => getSummaryFromTransactions(transactions, selectedOutletId, productCount, outlets),
+    [transactions, selectedOutletId, productCount, outlets]
+  )
 
-  const recentTransactions = currentData
-    ? currentData.recentTransactions
-    : Object.entries(outletData)
-        .flatMap(([outletId, data]) =>
-          data.recentTransactions.map((tx) => ({
-            ...tx,
-            outletId,
-            outletName: outlets.find((o) => o.id === outletId)?.name || "",
-          }))
-        )
-        .slice(0, 7)
+  const perOutletSummary = useMemo(
+    () => getPerOutletSummary(transactions, productCount, outlets),
+    [transactions, productCount, outlets]
+  )
 
-  const topProducts = currentData
-    ? currentData.topProducts
-    : [
-        { name: "Bridgestone Ecopia EP150", sold: 45, revenue: "Rp 38.250.000" },
-        { name: "GT Radial Champiro Eco", sold: 38, revenue: "Rp 22.800.000" },
-        { name: "Dunlop Enasave EC300+", sold: 32, revenue: "Rp 22.400.000" },
-        { name: "Hankook Kinergy EX", sold: 28, revenue: "Rp 19.600.000" },
-        { name: "Accelera PHI-R", sold: 24, revenue: "Rp 12.000.000" },
-      ]
+  const summaryCards = [
+    {
+      title: "Total Pendapatan",
+      value: formatRupiah(summary.totalRevenue),
+      change: "—",
+      trend: "up" as const,
+      description: "total transaksi selesai",
+      icon: DollarSign,
+    },
+    {
+      title: "Total Produk",
+      value: String(summary.productCount),
+      change: "—",
+      trend: "up" as const,
+      description: "produk dalam katalog",
+      icon: Package,
+    },
+    {
+      title: "Total Transaksi",
+      value: String(summary.totalTransactions),
+      change: "—",
+      trend: "up" as const,
+      description: "semua status",
+      icon: Receipt,
+    },
+    {
+      title: "Rata-rata/Hari",
+      value: formatRupiah(summary.avgPerDay),
+      change: "—",
+      trend: "up" as const,
+      description: "dari pendapatan bulan ini",
+      icon: TrendingUp,
+    },
+  ]
+
+  const recentTransactions = summary.recentTransactions
+  const topProducts = summary.topProducts
 
   const outletLabel = isAllView
     ? "Semua Outlet"
@@ -230,94 +176,56 @@ export default function AdminDashboardPage() {
       {/* Super Admin: Outlet Comparison (shown only on "all" view) */}
       {isSuperAdmin && isAllView && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {outlets
-            .filter((o) => o.status === "active")
-            .map((outlet) => {
-              const data = outletData[outlet.id]
-              if (!data) return null
-              return (
-                <Card key={outlet.id} className="relative overflow-hidden">
-                  <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium text-foreground">
-                        {outlet.name}
-                      </CardTitle>
-                      <Badge
-                        variant="secondary"
-                        className="bg-[hsl(142,70%,90%)] text-[hsl(142,70%,25%)]"
-                      >
-                        Aktif
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {outlet.address}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Pendapatan</p>
-                        <p className="font-heading text-sm font-bold text-foreground">
-                          {formatRupiah(data.revenue)}
-                        </p>
-                        <div className="flex items-center gap-0.5">
-                          {data.revenueUp ? (
-                            <ArrowUpRight className="h-3 w-3 text-[hsl(142,70%,40%)]" />
-                          ) : (
-                            <ArrowDownRight className="h-3 w-3 text-destructive" />
-                          )}
-                          <span
-                            className={
-                              data.revenueUp
-                                ? "text-[10px] text-[hsl(142,70%,40%)]"
-                                : "text-[10px] text-destructive"
-                            }
-                          >
-                            {data.revenueChange}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Transaksi</p>
-                        <p className="font-heading text-sm font-bold text-foreground">
-                          {data.transactions}
-                        </p>
-                        <div className="flex items-center gap-0.5">
-                          {data.transactionsUp ? (
-                            <ArrowUpRight className="h-3 w-3 text-[hsl(142,70%,40%)]" />
-                          ) : (
-                            <ArrowDownRight className="h-3 w-3 text-destructive" />
-                          )}
-                          <span
-                            className={
-                              data.transactionsUp
-                                ? "text-[10px] text-[hsl(142,70%,40%)]"
-                                : "text-[10px] text-destructive"
-                            }
-                          >
-                            {data.transactionsChange}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Produk</p>
-                        <p className="font-heading text-sm font-bold text-foreground">
-                          {data.products}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Rata-rata/Hari</p>
-                        <p className="font-heading text-sm font-bold text-foreground">
-                          {formatRupiah(data.avgPerDay)}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+          {perOutletSummary.map(({ outlet, totalRevenue, totalTransactions, productCount, avgPerDay }) => (
+            <Card key={outlet.id} className="relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-foreground">
+                    {outlet.name}
+                  </CardTitle>
+                  <Badge
+                    variant="secondary"
+                    className="bg-[hsl(142,70%,90%)] text-[hsl(142,70%,25%)]"
+                  >
+                    Aktif
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3" />
+                  {outlet.address}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pendapatan</p>
+                    <p className="font-heading text-sm font-bold text-foreground">
+                      {formatRupiah(totalRevenue)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Transaksi</p>
+                    <p className="font-heading text-sm font-bold text-foreground">
+                      {totalTransactions}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Produk</p>
+                    <p className="font-heading text-sm font-bold text-foreground">
+                      {productCount}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Rata-rata/Hari</p>
+                    <p className="font-heading text-sm font-bold text-foreground">
+                      {formatRupiah(avgPerDay)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 

@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model ci_sessions {
+  id         String   @id @db.VarChar(128)
+  ip_address String   @db.VarChar(45)
+  timestamp  DateTime @default(now()) @db.Timestamp(0)
+  data       Bytes    @db.Blob
+}
+
+model kategori {
+  id            Int      @id @default(autoincrement())
+  nama_kategori String   @db.VarChar(255)
+  produk        produk[]
+}
+
+model merek {
+  id         Int       @id @default(autoincrement())
+  nama_merek String    @db.VarChar(255)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  produk     produk[]
+}
+
+model outlet {
+  id                                                   Int                 @id @default(autoincrement())
+  nama_outlet                                          String              @db.VarChar(255)
+  alamat                                               String?             @db.Text
+  kode_unik                                            String?             @unique(map: "kode_unik") @db.VarChar(50)
+  created_at                                           DateTime            @default(now()) @db.DateTime(0)
+  updated_at                                           DateTime            @default(now()) @db.DateTime(0)
+  pelanggan                                            pelanggan[]
+  produk_stok_harga                                    produk_stok_harga[]
+  transaksi                                            transaksi[]
+  transfer_stok_transfer_stok_id_outlet_asalTooutlet   transfer_stok[]     @relation("transfer_stok_id_outlet_asalTooutlet")
+  transfer_stok_transfer_stok_id_outlet_tujuanTooutlet transfer_stok[]     @relation("transfer_stok_id_outlet_tujuanTooutlet")
+  users                                                users[]
+}
+
+model pelanggan {
+  id             Int         @id @default(autoincrement())
+  nama_pelanggan String      @db.VarChar(255)
+  nomer_hp       String?     @db.VarChar(15)
+  id_outlet      Int
+  outlet         outlet      @relation(fields: [id_outlet], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "pelanggan_ibfk_1")
+  transaksi      transaksi[]
+
+  @@index([id_outlet], map: "id_outlet")
+}
+
+model produk {
+  id                   Int                    @id @default(autoincrement())
+  id_kategori          Int
+  id_merek             Int
+  nama_produk          String                 @db.VarChar(255)
+  ukuran               String?                @db.VarChar(50)
+  created_at           DateTime?              @db.DateTime(0)
+  updated_at           DateTime?              @db.DateTime(0)
+  kategori             kategori               @relation(fields: [id_kategori], references: [id], onDelete: Cascade, map: "produk_ibfk_1")
+  merek                merek                  @relation(fields: [id_merek], references: [id], onDelete: Cascade, map: "produk_ibfk_2")
+  produk_stok_harga    produk_stok_harga[]
+  transaksi_detail     transaksi_detail[]
+  transfer_stok_detail transfer_stok_detail[]
+
+  @@index([id_kategori], map: "id_kategori")
+  @@index([id_merek], map: "id_merek")
+}
+
+model produk_stok_harga {
+  id          Int     @id @default(autoincrement())
+  id_outlet   Int
+  id_produk   Int
+  harga_modal Decimal @db.Decimal(10, 2)
+  harga_jual  Decimal @db.Decimal(10, 2)
+  stok        Int     @default(0)
+  produk      produk  @relation(fields: [id_produk], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_psh_produk_id")
+  outlet      outlet  @relation(fields: [id_outlet], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "produk_stok_harga_ibfk_1")
+
+  @@unique([id_outlet, id_produk], map: "uk_outlet_produk")
+  @@index([id_produk], map: "fk_psh_produk_id")
+}
+
+model transaksi {
+  id                Int                @id @default(autoincrement())
+  id_pelanggan      Int?
+  id_outlet         Int
+  id_user           Int?
+  nomor_invoice     String             @unique(map: "nomor_invoice") @db.VarChar(50)
+  tanggal           DateTime           @db.Date
+  nopol             String?            @db.VarChar(20)
+  mobil             String?            @db.VarChar(100)
+  catatan           String?            @db.Text
+  total_pembayaran  Decimal            @db.Decimal(10, 2)
+  total_terbayar    Decimal            @default(0.00) @db.Decimal(15, 2)
+  status_pembayaran String             @default("Lunas") @db.VarChar(20)
+  tanggal_lunas     DateTime?          @db.DateTime(0)
+  sisa_tagihan      Decimal            @default(0.00) @db.Decimal(10, 2)
+  diskon            Decimal?           @default(0.00) @db.Decimal(10, 2)
+  pelanggan         pelanggan?         @relation(fields: [id_pelanggan], references: [id], map: "transaksi_ibfk_1")
+  outlet            outlet             @relation(fields: [id_outlet], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "transaksi_ibfk_2")
+  transaksi_detail  transaksi_detail[]
+
+  @@index([id_outlet], map: "id_outlet")
+  @@index([id_pelanggan], map: "id_pelanggan")
+}
+
+model transaksi_detail {
+  id                 Int       @id @default(autoincrement())
+  id_transaksi       Int
+  id_produk          Int?
+  id_produk_manual   Int?
+  nama_produk_manual String?   @db.VarChar(255)
+  harga_satuan       Decimal   @db.Decimal(10, 2)
+  jumlah             Int
+  subtotal           Decimal   @db.Decimal(10, 2)
+  produk             produk?   @relation(fields: [id_produk], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_td_produk_id")
+  transaksi          transaksi @relation(fields: [id_transaksi], references: [id], onDelete: Cascade, map: "transaksi_detail_ibfk_1")
+
+  @@index([id_produk], map: "id_produk")
+  @@index([id_transaksi], map: "id_transaksi")
+}
+
+model transaksi_pembayaran {
+  id                Int      @id @default(autoincrement())
+  id_transaksi      Int
+  metode_pembayaran String   @db.VarChar(50)
+  nominal_bayar     Decimal  @db.Decimal(15, 2)
+  catatan           String?  @db.VarChar(255)
+  created_at        DateTime @default(now()) @db.DateTime(0)
+
+  @@index([id_transaksi], map: "id_transaksi")
+}
+
+model transfer_stok {
+  id                                            Int                    @id @default(autoincrement())
+  nomor_transfer                                String                 @unique(map: "nomor_transfer") @db.VarChar(50)
+  id_outlet_asal                                Int
+  id_outlet_tujuan                              Int
+  tanggal_kirim                                 DateTime               @db.DateTime(0)
+  tanggal_terima                                DateTime?              @db.DateTime(0)
+  status                                        transfer_stok_status   @default(diajukan)
+  catatan                                       String?                @db.Text
+  id_user_pengirim                              Int
+  id_user_penerima                              Int?
+  created_at                                    DateTime               @default(now()) @db.DateTime(0)
+  updated_at                                    DateTime               @default(now()) @db.DateTime(0)
+  outlet_transfer_stok_id_outlet_asalTooutlet   outlet                 @relation("transfer_stok_id_outlet_asalTooutlet", fields: [id_outlet_asal], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transfer_stok_ibfk_1")
+  outlet_transfer_stok_id_outlet_tujuanTooutlet outlet                 @relation("transfer_stok_id_outlet_tujuanTooutlet", fields: [id_outlet_tujuan], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transfer_stok_ibfk_2")
+  users_transfer_stok_id_user_pengirimTousers   users                  @relation("transfer_stok_id_user_pengirimTousers", fields: [id_user_pengirim], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transfer_stok_ibfk_3")
+  users_transfer_stok_id_user_penerimaTousers   users?                 @relation("transfer_stok_id_user_penerimaTousers", fields: [id_user_penerima], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transfer_stok_ibfk_4")
+  transfer_stok_detail                          transfer_stok_detail[]
+
+  @@index([id_outlet_asal], map: "id_outlet_asal")
+  @@index([id_outlet_tujuan], map: "id_outlet_tujuan")
+  @@index([id_user_penerima], map: "id_user_penerima")
+  @@index([id_user_pengirim], map: "id_user_pengirim")
+}
+
+model transfer_stok_detail {
+  id            Int           @id @default(autoincrement())
+  id_transfer   Int
+  id_produk     Int
+  jumlah        Int
+  transfer_stok transfer_stok @relation(fields: [id_transfer], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "transfer_stok_detail_ibfk_1")
+  produk        produk        @relation(fields: [id_produk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transfer_stok_detail_ibfk_2")
+
+  @@index([id_produk], map: "id_produk")
+  @@index([id_transfer], map: "id_transfer")
+}
+
+model users {
+  id                                                  Int             @id @default(autoincrement())
+  name                                                String          @db.VarChar(255)
+  username                                            String          @unique(map: "username") @db.VarChar(50)
+  password                                            String          @db.VarChar(255)
+  role                                                users_role      @default(outlet)
+  id_outlet                                           Int?
+  created_at                                          DateTime        @default(now()) @db.Timestamp(0)
+  transfer_stok_transfer_stok_id_user_pengirimTousers transfer_stok[] @relation("transfer_stok_id_user_pengirimTousers")
+  transfer_stok_transfer_stok_id_user_penerimaTousers transfer_stok[] @relation("transfer_stok_id_user_penerimaTousers")
+  outlet                                              outlet?         @relation(fields: [id_outlet], references: [id], onUpdate: NoAction, map: "users_ibfk_1")
+
+  @@index([id_outlet], map: "id_outlet")
+}
+
+enum users_role {
+  admin
+  outlet
+}
+
+enum transfer_stok_status {
+  diajukan
+  dikirim
+  diterima
+  ditolak
+}

@@ -13,6 +13,7 @@ import {
   Users,
   Shield,
   CheckCircle2,
+  KeyRound,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,14 +36,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useOutlet, outlets as initialOutlets, adminUsers as initialAdminUsers, type Outlet, type AdminUser } from "@/lib/outlet-context"
+import { useOutlet, type Outlet, type AdminUser } from "@/lib/outlet-context"
+import { toast } from "sonner"
 
 export default function OutletManagementPage() {
-  const { isSuperAdmin } = useOutlet()
+  const { isSuperAdmin, outlets: outletsList, setOutlets: setOutletsList, adminUsers: adminUsersList, setAdminUsers: setAdminUsersList } = useOutlet()
   const router = useRouter()
 
-  const [outletsList, setOutletsList] = useState<Outlet[]>(initialOutlets)
-  const [adminUsersList, setAdminUsersList] = useState<AdminUser[]>(initialAdminUsers)
   const [search, setSearch] = useState("")
 
   // Outlet dialog
@@ -58,6 +58,13 @@ export default function OutletManagementPage() {
   // Delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingItem, setDeletingItem] = useState<{ type: "outlet" | "admin"; id: string; name: string } | null>(null)
+
+  // Ubah password dialog (untuk admin)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [passwordAdmin, setPasswordAdmin] = useState<AdminUser | null>(null)
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordLoading, setPasswordLoading] = useState(false)
 
   if (!isSuperAdmin) {
     return (
@@ -158,6 +165,45 @@ export default function OutletManagementPage() {
     }
     setDeleteDialogOpen(false)
     setDeletingItem(null)
+  }
+
+  const openPasswordDialog = (admin: AdminUser) => {
+    setPasswordAdmin(admin)
+    setNewPassword("")
+    setConfirmPassword("")
+    setPasswordDialogOpen(true)
+  }
+
+  const handleSetPassword = async () => {
+    if (!passwordAdmin) return
+    if (newPassword.length < 4) {
+      toast.error("Password minimal 4 karakter.")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Konfirmasi password tidak sama.")
+      return
+    }
+    setPasswordLoading(true)
+    try {
+      const res = await fetch("/api/admin/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: passwordAdmin.id, newPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal mengubah password.")
+        setPasswordLoading(false)
+        return
+      }
+      toast.success("Password berhasil diubah.")
+      setPasswordDialogOpen(false)
+      setPasswordAdmin(null)
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+    setPasswordLoading(false)
   }
 
   const activeOutlets = outletsList.filter((o) => o.status === "active").length
@@ -358,8 +404,8 @@ export default function OutletManagementPage() {
                   <TableHead>Username</TableHead>
                   <TableHead className="text-center">Role</TableHead>
                   <TableHead>Outlet</TableHead>
-                  <TableHead className="w-24 text-center">Aksi</TableHead>
-                </TableRow>
+<TableHead className="w-32 text-center">Aksi</TableHead>
+                  </TableRow>
               </TableHeader>
               <TableBody>
                 {adminUsersList.map((admin) => {
@@ -398,6 +444,14 @@ export default function OutletManagementPage() {
                             aria-label={`Edit ${admin.name}`}
                           >
                             <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openPasswordDialog(admin)}
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                            aria-label={`Ubah password ${admin.name}`}
+                            title="Ubah Password"
+                          >
+                            <KeyRound className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => openDelete("admin", admin.id, admin.name)}
@@ -584,6 +638,54 @@ export default function OutletManagementPage() {
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ubah Password (untuk admin) */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <KeyRound className="h-4 w-4" />
+              Ubah Password
+            </DialogTitle>
+            <DialogDescription>
+              {passwordAdmin
+                ? `Set password baru untuk ${passwordAdmin.name} (${passwordAdmin.email}). Password akan disimpan terenkripsi di database.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="new-pw">Password baru</Label>
+              <Input
+                id="new-pw"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Min. 4 karakter"
+                minLength={4}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="confirm-pw">Konfirmasi password baru</Label>
+              <Input
+                id="confirm-pw"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Ulangi password baru"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleSetPassword} disabled={passwordLoading}>
+              {passwordLoading ? "Menyimpan..." : "Simpan Password"}
             </Button>
           </DialogFooter>
         </DialogContent>

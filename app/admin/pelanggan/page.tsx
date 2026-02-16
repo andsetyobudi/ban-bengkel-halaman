@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useOutlet, outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
 import type { CustomerItem } from "@/lib/outlet-context"
 
 export default function PelangganPage() {
@@ -40,6 +40,7 @@ export default function PelangganPage() {
     removeCustomer,
     selectedOutletId,
     isSuperAdmin,
+    outlets,
   } = useOutlet()
 
   const [search, setSearch] = useState("")

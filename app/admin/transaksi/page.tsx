@@ -29,34 +29,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { useOutlet, outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { TransactionItem, PaymentMethodType, PaymentEntry } from "@/lib/outlet-context"
 
-// Product data for selection
-type ProductData = {
+// Item untuk pilihan di transaksi (produk dari context + jasa)
+type ProductOption = {
   id: string
   name: string
   code: string
   brand: string
   sellPrice: number
+  stock?: number
+  productId?: string
 }
-
-const productCatalog: ProductData[] = [
-  { id: "P001", name: "Ecopia EP150", code: "185/65R15", brand: "Bridgestone", sellPrice: 750000 },
-  { id: "P002", name: "Champiro Eco", code: "175/65R14", brand: "GT Radial", sellPrice: 520000 },
-  { id: "P003", name: "Enasave EC300+", code: "195/60R16", brand: "Dunlop", sellPrice: 880000 },
-  { id: "P004", name: "Kinergy EX", code: "205/55R16", brand: "Hankook", sellPrice: 720000 },
-  { id: "P005", name: "PHI-R", code: "205/45R17", brand: "Accelera", sellPrice: 650000 },
-  { id: "P006", name: "Turanza T005A", code: "215/60R17", brand: "Bridgestone", sellPrice: 1250000 },
-  { id: "P007", name: "Savero SUV", code: "225/65R17", brand: "GT Radial", sellPrice: 950000 },
-  { id: "P008", name: "AT3", code: "265/65R17", brand: "Dunlop", sellPrice: 1450000 },
-  { id: "P009", name: "K415", code: "185/70R14", brand: "Hankook", sellPrice: 480000 },
-  { id: "P010", name: "Techno Sport", code: "195/50R16", brand: "Accelera", sellPrice: 580000 },
-  { id: "P011", name: "Ban Dalam Motor", code: "70/90-17", brand: "IRC", sellPrice: 45000 },
-  { id: "P012", name: "NR76 Tubeless", code: "80/90-17", brand: "IRC", sellPrice: 165000 },
-]
 
 const serviceCatalog = [
   { name: "Tambal Ban Tubeless", price: 50000 },
@@ -90,7 +77,8 @@ const PAYMENT_METHOD_LABELS: Record<PaymentMethodType, string> = {
 
 export default function TransaksiBaruPage() {
   const router = useRouter()
-  const { selectedOutletId, addTransaction, nextInvoiceNumber } = useOutlet()
+  const { selectedOutletId, outlets, products, addTransaction, nextInvoiceNumber } = useOutlet()
+  const effectiveOutletId = selectedOutletId === "all" ? (outlets[0]?.id ?? "") : selectedOutletId
   const [step, setStep] = useState(0)
 
   // Step 1 - Cart
@@ -128,27 +116,49 @@ export default function TransaksiBaruPage() {
   const sisa = total - nominalVal
   const isPiutang = nominalVal > 0 && nominalVal < total
 
-  // Filtered products for search
-  const filteredProducts = useMemo(() => {
-    if (!productSearch.trim()) return [...productCatalog, ...serviceCatalog.map((s, i) => ({ id: `SVC-${i}`, name: s.name, code: "Jasa", brand: "Servis", sellPrice: s.price }))]
-    const q = productSearch.toLowerCase()
-    const prods = productCatalog.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
-    )
-    const services = serviceCatalog
-      .filter((s) => s.name.toLowerCase().includes(q))
-      .map((s, i) => ({ id: `SVC-${i}`, name: s.name, code: "Jasa", brand: "Servis", sellPrice: s.price }))
-    return [...prods, ...services]
-  }, [productSearch])
+  // Produk dari context: stok per outlet, tampilkan jumlah stok
+  const productOptions: ProductOption[] = useMemo(() => {
+    return products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      code: p.code,
+      brand: p.brand,
+      sellPrice: p.sellPrice,
+      stock: p.stock[effectiveOutletId] ?? 0,
+      productId: p.id,
+    }))
+  }, [products, effectiveOutletId])
 
-  // Cart actions
-  const addToCart = (name: string, price: number) => {
+  // Filtered products for search (produk + jasa)
+  const filteredProducts = useMemo(() => {
+    const services: ProductOption[] = serviceCatalog.map((s, i) => ({
+      id: `SVC-${i}`,
+      name: s.name,
+      code: "Jasa",
+      brand: "Servis",
+      sellPrice: s.price,
+    }))
+    const all = [...productOptions, ...services]
+    if (!productSearch.trim()) return all
+    const q = productSearch.toLowerCase()
+    return all.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q)
+    )
+  }, [productSearch, productOptions])
+
+  // Cart actions (productId dipakai untuk kurangi stok saat transaksi selesai)
+  const addToCart = (name: string, price: number, productId?: string) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.name === name)
+      const existing = prev.find((item) => item.name === name && item.productId === productId)
       if (existing) {
-        return prev.map((item) => (item.name === name ? { ...item, qty: item.qty + 1 } : item))
+        return prev.map((item) =>
+          item.name === name && item.productId === productId ? { ...item, qty: item.qty + 1 } : item
+        )
       }
-      return [...prev, { name, price, qty: 1 }]
+      return [...prev, { name, price, qty: 1, ...(productId ? { productId } : {}) }]
     })
   }
 
@@ -383,8 +393,8 @@ function StepProduk({
 }: {
   productSearch: string
   setProductSearch: (v: string) => void
-  filteredProducts: { id: string; name: string; code: string; brand: string; sellPrice: number }[]
-  addToCart: (name: string, price: number) => void
+  filteredProducts: ProductOption[]
+  addToCart: (name: string, price: number, productId?: string) => void
   manualName: string
   setManualName: (v: string) => void
   manualPrice: number | ""
@@ -452,34 +462,56 @@ function StepProduk({
             {filteredProducts.length === 0 ? (
               <div className="p-6 text-center text-sm text-muted-foreground">Produk tidak ditemukan.</div>
             ) : (
-              filteredProducts.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    addToCart(
-                      `${p.brand !== "Servis" ? `${p.brand} ` : ""}${p.name}${p.code !== "Jasa" ? ` ${p.code}` : ""}`,
-                      p.sellPrice
-                    )
-                    setShowSearchDialog(false)
-                    setProductSearch("")
-                  }}
-                  className="flex w-full items-center justify-between border-b border-border px-4 py-3 text-left text-sm transition-colors last:border-b-0 hover:bg-muted"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">
-                      {p.brand !== "Servis" ? `${p.brand} ` : ""}
-                      {p.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{p.code}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">{formatRupiah(p.sellPrice)}</span>
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Plus className="h-3.5 w-3.5" />
+              filteredProducts.map((p) => {
+                const isProduct = p.productId != null
+                const stock = p.stock ?? 0
+                const inCartQty = cart.filter((i) => i.productId === p.productId).reduce((s, i) => s + i.qty, 0)
+                const available = stock - inCartQty
+                const isOutOfStock = isProduct && available <= 0
+                const displayName =
+                  p.brand !== "Servis"
+                    ? `${p.brand} ${p.name}${p.code !== "Jasa" ? ` ${p.code}` : ""}`
+                    : p.name
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      if (isOutOfStock) return
+                      addToCart(displayName, p.sellPrice, p.productId)
+                      setShowSearchDialog(false)
+                      setProductSearch("")
+                    }}
+                    disabled={isOutOfStock}
+                    className={cn(
+                      "flex w-full items-center justify-between border-b border-border px-4 py-3 text-left text-sm transition-colors last:border-b-0 hover:bg-muted",
+                      isOutOfStock && "cursor-not-allowed opacity-50 hover:bg-transparent"
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">
+                        {p.brand !== "Servis" ? `${p.brand} ` : ""}
+                        {p.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {p.code}
+                        {isProduct && (
+                          <span className={cn("ml-2", isOutOfStock ? "text-destructive" : "text-muted-foreground")}>
+                            Stok: {available}
+                          </span>
+                        )}
+                      </p>
                     </div>
-                  </div>
-                </button>
-              ))
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{formatRupiah(p.sellPrice)}</span>
+                      {!isOutOfStock && (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Plus className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                )
+              })
             )}
           </div>
         </DialogContent>

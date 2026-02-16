@@ -2,7 +2,8 @@
 
 import { useCallback, useRef } from "react"
 import type { TransactionRecord, PaymentMethodType } from "@/lib/outlet-context"
-import { outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
+import type { Outlet } from "@/lib/outlet-context"
 
 const PAYMENT_LABELS: Record<PaymentMethodType, string> = {
   tunai: "Tunai",
@@ -15,7 +16,14 @@ function formatRupiah(num: number) {
   return "Rp " + num.toLocaleString("id-ID")
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, short = false) {
+  if (short) {
+    return new Date(dateStr).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+  }
   return new Date(dateStr).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "long",
@@ -23,9 +31,17 @@ function formatDate(dateStr: string) {
   })
 }
 
+function formatDateSlash(dateStr: string) {
+  const d = new Date(dateStr)
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const year = d.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
 type PaperSize = "a4" | "thermal"
 
-function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize): string {
+function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize, outlets: Outlet[]): string {
   const outlet = outlets.find((o) => o.id === tx.outletId)
   const outletName = outlet?.name ?? "Bengkel"
   const outletAddress = outlet?.address ?? ""
@@ -33,30 +49,37 @@ function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize): string {
 
   const isThermal = paperSize === "thermal"
   const pageWidth = isThermal ? "58mm" : "210mm"
-  const bodyPadding = isThermal ? "4px 6px" : "20px 30px"
-  const fontSize = isThermal ? "12px" : "13px"
-  const fontSizeSmall = isThermal ? "10px" : "11px"
-  const fontSizeTitle = isThermal ? "14px" : "20px"
-  const fontSizeSubtitle = isThermal ? "10px" : "11px"
-  const logoSize = isThermal ? "40px" : "64px"
+  const bodyPadding = isThermal ? "0" : "20px 30px"
+  const fontSize = isThermal ? "14px" : "13px"
+  const fontSizeSmall = isThermal ? "11px" : "11px"
+  const fontSizeTitle = isThermal ? "16px" : "20px"
+  const fontSizeSubtitle = isThermal ? "11px" : "11px"
+  const logoSize = isThermal ? "44px" : "64px"
   const separatorChar = isThermal ? "-" : "-"
-  const separatorRepeat = isThermal ? 32 : 80
+  const separatorRepeat = isThermal ? 24 : 80
 
   const separator = separatorChar.repeat(separatorRepeat)
+
+  const thermalItemRows = tx.items
+    .map((item) => {
+      const lineTotal = item.qty * item.price
+      const priceStr = formatRupiah(item.price)
+      const totalStr = formatRupiah(lineTotal)
+      return `
+        <tr class="item-row">
+          <td colspan="3">${item.name}</td>
+        </tr>
+        <tr class="item-price">
+          <td>${item.qty}x</td>
+          <td class="text-right">${priceStr}</td>
+          <td class="text-right">${totalStr}</td>
+        </tr>`
+    })
+    .join("")
 
   const itemRows = tx.items
     .map((item) => {
       const lineTotal = item.qty * item.price
-      if (isThermal) {
-        return `
-          <tr>
-            <td colspan="4" style="padding:1px 0 0 0;font-size:${fontSize};">${item.name}</td>
-          </tr>
-          <tr>
-            <td style="padding:0 0 1px 0;font-size:${fontSizeSmall};color:#666;">&nbsp;${item.qty}x ${formatRupiah(item.price)}</td>
-            <td colspan="3" style="padding:0 0 1px 0;text-align:right;font-size:${fontSize};">${formatRupiah(lineTotal)}</td>
-          </tr>`
-      }
       return `
         <tr>
           <td style="padding:4px 0;font-size:${fontSize};">${item.name}</td>
@@ -77,70 +100,102 @@ function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize): string {
     )
     .join("")
 
+  const dateStr = formatDate(tx.date)
+
   if (isThermal) {
+    const paymentMethodStr = tx.payments.map((p) => PAYMENT_LABELS[p.method]).join(", ")
+    const statusStr = tx.sisa > 0 ? "Piutang" : "Lunas"
     return `<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<title>Nota ${tx.invoice}</title>
-<style>
-  @page { size: 58mm auto; margin: 0; }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { width: 58mm; font-family: 'Courier New', monospace; font-size: ${fontSize}; color: #000; padding: ${bodyPadding}; }
-  table { width:100%; border-collapse:collapse; }
-  .sep { text-align:center; color:#999; font-size:${fontSizeSmall}; margin:2px 0; overflow:hidden; white-space:nowrap; }
-</style>
-</head><body>
-
-<div style="text-align:center;margin-bottom:4px;">
-  <div style="margin:0 auto 4px auto;width:${logoSize};height:${logoSize};border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;border-radius:4px;">
-    <img src="/images/logo-nota.jpg" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=font-size:6px;color:#999>LOGO</span>'" />
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nota #${tx.invoice}</title>
+  <style>
+    @page { size: 58mm auto; margin: 0; }
+    body { font-family: monospace; font-size: 14px; width: 58mm; margin: 0; padding: 0; line-height: 1.4; }
+    .container { width: 58mm; padding: 2mm; }
+    .header, .footer { text-align: center; }
+    h3, p { margin: 0; padding: 0; }
+    h3 { font-size: 16px; font-weight: bold; }
+    .header p, .footer p { font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 3px 0; }
+    .text-right { text-align: right; }
+    .text-left { text-align: left; }
+    .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+    .details { display: table; width: 100%; }
+    .details p { display: table-row; }
+    .details span.label { display: table-cell; font-size: 14px; padding-right: 5px; width: 30%; }
+    .details span.label-small { width: 20%; }
+    .details span.value { display: table-cell; font-size: 14px; }
+    .item-row td { font-size: 15px; font-weight: bold; }
+    .item-price td { font-size: 14px; }
+    .summary-table { font-size: 15px; }
+    .total-pay-table { font-size: 18px; font-weight: bold; }
+    .notes { text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h3>${outletName}</h3>
+      <p>${outletAddress}</p>
+      <p>Telp/WA : ${outletPhone}</p>
+      <p>Instagram : @carproban</p>
+    </div>
+    <div class="line"></div>
+    <div class="details">
+      <p><span class="label">Invoice</span><span class="value">: #${tx.invoice}</span></p>
+      <p><span class="label">Tanggal</span><span class="value">: ${formatDateSlash(tx.date)}</span></p>
+      <p><span class="label">Pelanggan</span><span class="value">: ${tx.customerName}</span></p>
+      ${tx.customerPhone ? `<p><span class="label">No. Telp</span><span class="value">: ${tx.customerPhone}</span></p>` : ""}
+      <p><span class="label">Nopol</span><span class="value">: ${tx.nopol}</span></p>
+      ${tx.vehicle ? `<p><span class="label">Mobil</span><span class="value">: ${tx.vehicle}</span></p>` : ""}
+    </div>
+    <div class="line"></div>
+    <table>
+      <tbody>${thermalItemRows}</tbody>
+    </table>
+    <div class="line"></div>
+    <table class="summary-table">
+      <tbody>
+        <tr>
+          <td class="text-left">Subtotal:</td>
+          <td class="text-right">${formatRupiah(tx.subtotal)}</td>
+        </tr>
+        <tr>
+          <td class="text-left">Diskon:</td>
+          <td class="text-right">- ${formatRupiah(tx.discount)}</td>
+        </tr>
+        <tr>
+          <td class="text-left">Total Tagihan:</td>
+          <td class="text-right">${formatRupiah(tx.total)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="line"></div>
+    <div class="details">
+      <p><span class="label label-small">Status</span><span class="value">: <strong>${statusStr}</strong></span></p>
+      <p><span class="label label-small">Metode</span><span class="value">: ${paymentMethodStr}</span></p>
+    </div>
+    <div class="line"></div>
+    <table class="total-pay-table">
+      <tbody>
+        <tr>
+          <td class="text-left">Diterima:</td>
+          <td class="text-right">${formatRupiah(tx.nominalBayar)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="line"></div>
+    ${tx.note ? `<div class="notes"><p>Catatan: ${tx.note}</p></div><div class="line"></div>` : ""}
+    <div class="footer">
+      <p>Terima kasih sudah berbelanja!</p>
+    </div>
   </div>
-  <div style="font-size:${fontSizeTitle};font-weight:bold;">${outletName}</div>
-  <div style="font-size:${fontSizeSmall};color:#555;">${outletAddress}</div>
-  <div style="font-size:${fontSizeSmall};color:#555;">${outletPhone}</div>
-</div>
-
-<div class="sep">${separator}</div>
-
-<table>
-  <tr><td style="font-size:${fontSizeSmall};color:#555;">No</td><td style="font-size:${fontSize};text-align:right;">${tx.invoice}</td></tr>
-  <tr><td style="font-size:${fontSizeSmall};color:#555;">Tgl</td><td style="font-size:${fontSize};text-align:right;">${formatDate(tx.date)}</td></tr>
-  <tr><td style="font-size:${fontSizeSmall};color:#555;">Plg</td><td style="font-size:${fontSize};text-align:right;">${tx.customerName}</td></tr>
-  <tr><td style="font-size:${fontSizeSmall};color:#555;">Nopol</td><td style="font-size:${fontSize};text-align:right;">${tx.nopol}</td></tr>
-  ${tx.vehicle ? `<tr><td style="font-size:${fontSizeSmall};color:#555;">Kndr</td><td style="font-size:${fontSize};text-align:right;">${tx.vehicle}</td></tr>` : ""}
-</table>
-
-<div class="sep">${separator}</div>
-
-<table>${itemRows}</table>
-
-<div class="sep">${separator}</div>
-
-<table>
-  <tr><td style="font-size:${fontSize};">Subtotal</td><td style="text-align:right;font-size:${fontSize};">${formatRupiah(tx.subtotal)}</td></tr>
-  ${tx.discount > 0 ? `<tr><td style="font-size:${fontSize};">Diskon</td><td style="text-align:right;font-size:${fontSize};color:red;">-${formatRupiah(tx.discount)}</td></tr>` : ""}
-  <tr><td style="font-size:${fontSizeTitle};font-weight:bold;padding-top:2px;">TOTAL</td><td style="text-align:right;font-size:${fontSizeTitle};font-weight:bold;padding-top:2px;">${formatRupiah(tx.total)}</td></tr>
-</table>
-
-<div class="sep">${separator}</div>
-
-<table>
-  <tr><td colspan="2" style="font-size:${fontSizeSmall};color:#555;padding-bottom:1px;">Pembayaran:</td></tr>
-  ${paymentRows}
-  <tr><td style="font-size:${fontSize};padding-top:2px;">Bayar</td><td style="text-align:right;font-size:${fontSize};padding-top:2px;">${formatRupiah(tx.nominalBayar)}</td></tr>
-  ${tx.sisa > 0 ? `<tr><td style="font-size:${fontSize};color:red;">Sisa</td><td style="text-align:right;font-size:${fontSize};color:red;">${formatRupiah(tx.sisa)}</td></tr>` : ""}
-  ${tx.nominalBayar > tx.total ? `<tr><td style="font-size:${fontSize};">Kembalian</td><td style="text-align:right;font-size:${fontSize};">${formatRupiah(tx.nominalBayar - tx.total)}</td></tr>` : ""}
-</table>
-
-${tx.note ? `<div class="sep">${separator}</div><div style="font-size:${fontSizeSmall};color:#555;">Catatan: ${tx.note}</div>` : ""}
-
-<div class="sep">${separator}</div>
-
-<div style="text-align:center;margin-top:4px;">
-  <div style="font-size:${fontSizeSmall};color:#555;">Terima kasih</div>
-  <div style="font-size:${fontSizeSmall};color:#555;">atas kunjungan Anda</div>
-</div>
-
-</body></html>`
+</body>
+</html>`
   }
 
   // A4
@@ -250,6 +305,7 @@ ${tx.note ? `<div class="sep"></div><div style="font-size:${fontSizeSmall};color
 
 export function usePrintNota() {
   const printFrameRef = useRef<HTMLIFrameElement | null>(null)
+  const { outlets } = useOutlet()
 
   const printNota = useCallback((tx: TransactionRecord, paperSize: PaperSize) => {
     // Remove previous iframe if any
@@ -270,7 +326,7 @@ export function usePrintNota() {
     const doc = iframe.contentDocument || iframe.contentWindow?.document
     if (!doc) return
 
-    const html = buildNotaHTML(tx, paperSize)
+    const html = buildNotaHTML(tx, paperSize, outlets)
     doc.open()
     doc.write(html)
     doc.close()
@@ -286,7 +342,7 @@ export function usePrintNota() {
     setTimeout(() => {
       iframe.contentWindow?.print()
     }, 600)
-  }, [])
+  }, [outlets])
 
   return { printNota }
 }

@@ -1,10 +1,16 @@
-# v0 runtime files (should only exist in preview, not in git)
-__v0_runtime_loader.js
-__v0_devtools.tsx
-__v0_jsx-dev-runtime.ts
-
-# Common ignores
+# Dependency (Sangat Berat, jangan di-push!)
 node_modules/
+
+# Hasil Build (Dibuat otomatis saat deploy, jangan di-push)
 .next/
-.env*.local
+out/
+build/
+
+# Log dan file sampah
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 .DS_Store
+
+# File rahasia
+.env*.local

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useOutlet, outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
 
 type StockPerOutlet = Record<string, number>
 
@@ -174,7 +174,7 @@ function ReportTable({
 }
 
 export default function LaporanPage() {
-  const { selectedOutletId } = useOutlet()
+  const { selectedOutletId, outlets } = useOutlet()
   const [activeReport, setActiveReport] = useState<ReportType>("semua")
   const [onlyEmpty, setOnlyEmpty] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)

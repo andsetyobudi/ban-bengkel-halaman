@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode, type Dispatch, type SetStateAction } from "react"
 
 export type Outlet = {
   id: string
@@ -20,45 +20,8 @@ export type AdminUser = {
   outletId?: string
 }
 
-export const outlets: Outlet[] = [
-  {
-    id: "OTL-001",
-    name: "CarProBan Bantul",
-    address: "Jl. Bantul KM 5, Bantul, Yogyakarta",
-    phone: "0274-123456",
-    status: "active",
-  },
-  {
-    id: "OTL-002",
-    name: "CahayaBan Wiyoro",
-    address: "Jl. Wonosari KM 7, Wiyoro, Banguntapan, Bantul",
-    phone: "0274-234567",
-    status: "active",
-  },
-]
-
-export const adminUsers: AdminUser[] = [
-  {
-    id: "USR-001",
-    name: "Super Admin",
-    email: "admin",
-    role: "super_admin",
-  },
-  {
-    id: "USR-002",
-    name: "Admin Bantul",
-    email: "admin.bantul",
-    role: "outlet_admin",
-    outletId: "OTL-001",
-  },
-  {
-    id: "USR-003",
-    name: "Admin Wiyoro",
-    email: "admin.wiyoro",
-    role: "outlet_admin",
-    outletId: "OTL-002",
-  },
-]
+const defaultOutlets: Outlet[] = []
+const defaultAdminUsers: AdminUser[] = []
 
 export type BrandItem = {
   id: string
@@ -69,6 +32,34 @@ export type CategoryItem = {
   id: string
   name: string
 }
+
+export type StockPerOutlet = Record<string, number>
+
+export type ProductItem = {
+  id: string
+  name: string
+  code: string
+  brand: string
+  category: string
+  costPrice: number
+  sellPrice: number
+  stock: StockPerOutlet
+}
+
+const initialProducts: ProductItem[] = [
+  { id: "P001", name: "Ecopia EP150", code: "185/65R15", brand: "Bridgestone", category: "Ban Mobil", costPrice: 600000, sellPrice: 750000, stock: { "OTL-001": 24, "OTL-002": 12 } },
+  { id: "P002", name: "Champiro Eco", code: "175/65R14", brand: "GT Radial", category: "Ban Mobil", costPrice: 400000, sellPrice: 520000, stock: { "OTL-001": 18, "OTL-002": 10 } },
+  { id: "P003", name: "Enasave EC300+", code: "195/60R16", brand: "Dunlop", category: "Ban Mobil", costPrice: 700000, sellPrice: 880000, stock: { "OTL-001": 12, "OTL-002": 8 } },
+  { id: "P004", name: "Kinergy EX", code: "205/55R16", brand: "Hankook", category: "Ban Mobil", costPrice: 560000, sellPrice: 720000, stock: { "OTL-001": 15, "OTL-002": 6 } },
+  { id: "P005", name: "PHI-R", code: "205/45R17", brand: "Accelera", category: "Ban Mobil", costPrice: 480000, sellPrice: 650000, stock: { "OTL-001": 10, "OTL-002": 20 } },
+  { id: "P006", name: "Turanza T005A", code: "215/60R17", brand: "Bridgestone", category: "Ban SUV", costPrice: 980000, sellPrice: 1250000, stock: { "OTL-001": 4, "OTL-002": 8 } },
+  { id: "P007", name: "Savero SUV", code: "225/65R17", brand: "GT Radial", category: "Ban SUV", costPrice: 720000, sellPrice: 950000, stock: { "OTL-001": 6, "OTL-002": 10 } },
+  { id: "P008", name: "AT3", code: "265/65R17", brand: "Dunlop", category: "Ban SUV", costPrice: 1100000, sellPrice: 1450000, stock: { "OTL-001": 3, "OTL-002": 6 } },
+  { id: "P009", name: "K415", code: "185/70R14", brand: "Hankook", category: "Ban Mobil", costPrice: 360000, sellPrice: 480000, stock: { "OTL-001": 22, "OTL-002": 14 } },
+  { id: "P010", name: "Techno Sport", code: "195/50R16", brand: "Accelera", category: "Ban Mobil", costPrice: 420000, sellPrice: 580000, stock: { "OTL-001": 8, "OTL-002": 14 } },
+  { id: "P011", name: "Ban Dalam Motor", code: "70/90-17", brand: "IRC", category: "Ban Motor", costPrice: 30000, sellPrice: 45000, stock: { "OTL-001": 50, "OTL-002": 30 } },
+  { id: "P012", name: "NR76 Tubeless", code: "80/90-17", brand: "IRC", category: "Ban Motor", costPrice: 120000, sellPrice: 165000, stock: { "OTL-001": 30, "OTL-002": 20 } },
+]
 
 export type CustomerItem = {
   id: string
@@ -245,6 +236,7 @@ export type TransactionItem = {
   name: string
   price: number
   qty: number
+  productId?: string
 }
 
 export type TransactionRecord = {
@@ -403,6 +395,10 @@ const initialCategories: CategoryItem[] = [
 ]
 
 type OutletContextType = {
+  outlets: Outlet[]
+  setOutlets: Dispatch<SetStateAction<Outlet[]>>
+  adminUsers: AdminUser[]
+  setAdminUsers: Dispatch<SetStateAction<AdminUser[]>>
   currentUser: AdminUser | null
   setCurrentUser: (user: AdminUser | null) => void
   selectedOutletId: string
@@ -411,6 +407,9 @@ type OutletContextType = {
   isSuperAdmin: boolean
   availableOutlets: Outlet[]
   logout: () => void
+  products: ProductItem[]
+  setProducts: Dispatch<SetStateAction<ProductItem[]>>
+  decreaseProductStock: (productId: string, outletId: string, qty: number) => void
   brands: BrandItem[]
   addBrand: (name: string) => void
   updateBrand: (id: string, name: string) => void
@@ -437,6 +436,9 @@ type OutletContextType = {
 const OutletContext = createContext<OutletContextType | undefined>(undefined)
 
 export function OutletProvider({ children }: { children: ReactNode }) {
+  const [outlets, setOutlets] = useState<Outlet[]>(defaultOutlets)
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(defaultAdminUsers)
+
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
     if (typeof window === "undefined") return null
     const stored = localStorage.getItem("carproban_user")
@@ -455,6 +457,24 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("carproban_selected_outlet")
     return stored || "all"
   })
+
+  useEffect(() => {
+    fetch("/api/admin/initial-data")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) return
+        if (Array.isArray(data.outlets)) setOutlets(data.outlets)
+        if (Array.isArray(data.adminUsers)) setAdminUsers(data.adminUsers)
+        if (Array.isArray(data.products)) setProducts(data.products)
+        if (Array.isArray(data.customers)) setCustomers(data.customers)
+        if (Array.isArray(data.transfers)) setTransfers(data.transfers)
+        if (Array.isArray(data.piutang)) setPiutang(data.piutang)
+        if (Array.isArray(data.transactions)) setTransactions(data.transactions)
+        if (Array.isArray(data.brands)) setBrands(data.brands)
+        if (Array.isArray(data.categories)) setCategories(data.categories)
+      })
+      .catch(() => {})
+  }, [])
 
   const isSuperAdmin = currentUser?.role === "super_admin"
 
@@ -492,6 +512,20 @@ export function OutletProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     handleSetCurrentUser(null)
   }, [handleSetCurrentUser])
+
+  // Products (stok per outlet)
+  const [products, setProducts] = useState<ProductItem[]>(initialProducts)
+
+  const decreaseProductStock = useCallback((productId: string, outletId: string, qty: number) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== productId) return p
+        const current = p.stock[outletId] ?? 0
+        const next = Math.max(0, current - qty)
+        return { ...p, stock: { ...p.stock, [outletId]: next } }
+      })
+    )
+  }, [])
 
   // Brands CRUD
   const [brands, setBrands] = useState<BrandItem[]>(initialBrands)
@@ -580,6 +614,13 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     const newTx: TransactionRecord = { ...tx, id }
     setTransactions((prev) => [newTx, ...prev])
 
+    // Kurangi stok untuk item yang punya productId
+    tx.items.forEach((item) => {
+      if (item.productId && item.qty > 0) {
+        decreaseProductStock(item.productId, tx.outletId, item.qty)
+      }
+    })
+
     // Auto-create piutang if payment is less than total
     if (tx.isPiutang && tx.sisa > 0) {
       const piutangId = `PTG-${String(Date.now()).slice(-6)}`
@@ -601,7 +642,7 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     }
 
     return newTx
-  }, [transactions.length])
+  }, [transactions.length, decreaseProductStock])
 
   const removeTransaction = useCallback((id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id))
@@ -628,6 +669,10 @@ export function OutletProvider({ children }: { children: ReactNode }) {
   return (
     <OutletContext.Provider
       value={{
+        outlets,
+        setOutlets,
+        adminUsers,
+        setAdminUsers,
         currentUser,
         setCurrentUser: handleSetCurrentUser,
         selectedOutletId,
@@ -636,6 +681,9 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         availableOutlets,
         logout,
+        products,
+        setProducts,
+        decreaseProductStock,
         brands,
         addBrand,
         updateBrand,

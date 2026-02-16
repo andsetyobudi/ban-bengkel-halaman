@@ -3,21 +3,16 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, ArrowLeft, Shield, Store } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { adminUsers, type AdminUser } from "@/lib/outlet-context"
-
-const credentials: Record<string, { password: string; userId: string }> = {
-  "admin": { password: "admin123", userId: "USR-001" },
-  "admin.bantul": { password: "admin123", userId: "USR-002" },
-  "admin.wiyoro": { password: "admin123", userId: "USR-003" },
-}
+import { useOutlet } from "@/lib/outlet-context"
 
 export default function AdminLoginPage() {
   const router = useRouter()
+  const { setCurrentUser } = useOutlet()
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -29,23 +24,28 @@ export default function AdminLoginPage() {
     setError("")
     setLoading(true)
 
-    const cred = credentials[username]
-    if (cred && cred.password === password) {
-      const user = adminUsers.find((u) => u.id === cred.userId)
-      if (user) {
-        localStorage.setItem("carproban_admin", "true")
-        localStorage.setItem("carproban_user", JSON.stringify(user))
-        if (user.role === "outlet_admin" && user.outletId) {
-          localStorage.setItem("carproban_selected_outlet", user.outletId)
-        } else {
-          localStorage.setItem("carproban_selected_outlet", "all")
-        }
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error ?? "Username atau password salah.")
+        setLoading(false)
+        return
+      }
+
+      if (data.user) {
+        setCurrentUser(data.user)
         router.push("/admin")
       } else {
-        setError("User tidak ditemukan.")
+        setError("Username atau password salah.")
       }
-    } else {
-      setError("Username atau password salah.")
+    } catch {
+      setError("Koneksi gagal. Coba lagi.")
     }
     setLoading(false)
   }
@@ -117,25 +117,9 @@ export default function AdminLoginPage() {
               {loading ? "Memproses..." : "Masuk"}
             </Button>
 
-            {/* Credential hints */}
-            <div className="flex flex-col gap-2 rounded-lg bg-muted p-3">
-              <p className="text-xs font-medium text-foreground">Akun Demo:</p>
-              <div className="flex items-start gap-2">
-                <Shield className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                <div>
-                  <p className="text-xs font-medium text-foreground">Super Admin</p>
-                  <p className="text-xs text-muted-foreground">admin / admin123</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Store className="mt-0.5 h-3 w-3 shrink-0 text-accent-foreground" />
-                <div>
-                  <p className="text-xs font-medium text-foreground">Admin Outlet</p>
-                  <p className="text-xs text-muted-foreground">admin.bantul / admin123</p>
-                  <p className="text-xs text-muted-foreground">admin.wiyoro / admin123</p>
-                </div>
-              </div>
-            </div>
+            <p className="text-center text-xs text-muted-foreground">
+              Gunakan username dan password yang terdaftar di sistem.
+            </p>
           </form>
         </CardContent>
       </Card>

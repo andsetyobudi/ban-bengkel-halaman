@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -25,7 +26,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { useOutlet, outlets } from "@/lib/outlet-context"
+import { useOutlet } from "@/lib/outlet-context"
 
 export function AdminSidebar({
   open,
@@ -35,15 +36,20 @@ export function AdminSidebar({
   onClose: () => void
 }) {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
   const {
     currentUser,
     selectedOutletId,
     setSelectedOutletId,
     isSuperAdmin,
     availableOutlets,
+    outlets,
     logout,
   } = useOutlet()
 
+  useEffect(() => setMounted(true), [])
+
+  const showSuperAdminUI = mounted && isSuperAdmin
   const sidebarSections = [
     {
       title: null,
@@ -55,7 +61,7 @@ export function AdminSidebar({
       title: "Stok & Inventaris",
       links: [
         { label: "Daftar Produk", href: "/admin/produk", icon: Package },
-        ...(!isSuperAdmin
+        ...(!showSuperAdminUI
           ? [{ label: "Transfer Barang", href: "/admin/transfer", icon: ArrowLeftRight }]
           : []),
         { label: "Riwayat Transfer", href: "/admin/transfer/riwayat", icon: History },
@@ -71,7 +77,7 @@ export function AdminSidebar({
         { label: "Data Pelanggan", href: "/admin/pelanggan", icon: Users },
       ],
     },
-    ...(isSuperAdmin
+    ...(showSuperAdminUI
       ? [
           {
             title: "Master Data",
@@ -110,7 +116,7 @@ export function AdminSidebar({
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary">
-                {isSuperAdmin ? (
+                {showSuperAdminUI ? (
                   <Shield className="h-4 w-4 text-primary-foreground" />
                 ) : (
                   <User className="h-4 w-4 text-primary-foreground" />
@@ -118,10 +124,10 @@ export function AdminSidebar({
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-foreground leading-tight">
-                  {currentUser?.name || "Admin"}
+                  {mounted ? (currentUser?.name || "Admin") : "Admin"}
                 </p>
                 <p className="truncate text-xs text-muted-foreground mt-0.5">
-                  {currentUser?.email || "admin@carproban.com"}
+                  {mounted ? (currentUser?.email || "admin@carproban.com") : "admin@carproban.com"}
                 </p>
               </div>
             </div>
@@ -137,21 +143,21 @@ export function AdminSidebar({
             variant="secondary"
             className={cn(
               "mt-2.5 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5",
-              isSuperAdmin
+              showSuperAdminUI
                 ? "bg-primary/10 text-primary"
                 : "bg-accent/30 text-accent-foreground"
             )}
           >
-            {isSuperAdmin ? "Super Admin" : "Admin Outlet"}
+            {showSuperAdminUI ? "Super Admin" : "Admin Outlet"}
           </Badge>
         </div>
 
         {/* Outlet Switcher */}
         <div className="border-b border-border px-4 py-3">
           <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {isSuperAdmin ? "Pilih Outlet" : "Outlet Anda"}
+            {showSuperAdminUI ? "Pilih Outlet" : "Outlet Anda"}
           </p>
-          {isSuperAdmin ? (
+          {showSuperAdminUI ? (
             <Select value={selectedOutletId} onValueChange={setSelectedOutletId}>
               <SelectTrigger className="w-full text-xs">
                 <div className="flex items-center gap-2">
@@ -176,7 +182,7 @@ export function AdminSidebar({
             <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
               <Store className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <span className="truncate text-xs font-medium text-foreground">
-                {availableOutlets[0]?.name || "--"}
+                {mounted ? (availableOutlets[0]?.name || "--") : "--"}
               </span>
             </div>
           )}
