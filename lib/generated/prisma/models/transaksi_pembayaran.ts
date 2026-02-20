@@ -232,6 +232,7 @@ export type transaksi_pembayaranWhereInput = {
   nominal_bayar?: Prisma.DecimalFilter<"transaksi_pembayaran"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   catatan?: Prisma.StringNullableFilter<"transaksi_pembayaran"> | string | null
   created_at?: Prisma.DateTimeFilter<"transaksi_pembayaran"> | Date | string
+  transaksi?: Prisma.XOR<Prisma.TransaksiScalarRelationFilter, Prisma.transaksiWhereInput>
 }
 
 export type transaksi_pembayaranOrderByWithRelationInput = {
@@ -241,6 +242,7 @@ export type transaksi_pembayaranOrderByWithRelationInput = {
   nominal_bayar?: Prisma.SortOrder
   catatan?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
+  transaksi?: Prisma.transaksiOrderByWithRelationInput
   _relevance?: Prisma.transaksi_pembayaranOrderByRelevanceInput
 }
 
@@ -254,6 +256,7 @@ export type transaksi_pembayaranWhereUniqueInput = Prisma.AtLeast<{
   nominal_bayar?: Prisma.DecimalFilter<"transaksi_pembayaran"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   catatan?: Prisma.StringNullableFilter<"transaksi_pembayaran"> | string | null
   created_at?: Prisma.DateTimeFilter<"transaksi_pembayaran"> | Date | string
+  transaksi?: Prisma.XOR<Prisma.TransaksiScalarRelationFilter, Prisma.transaksiWhereInput>
 }, "id">
 
 export type transaksi_pembayaranOrderByWithAggregationInput = {
@@ -283,11 +286,11 @@ export type transaksi_pembayaranScalarWhereWithAggregatesInput = {
 }
 
 export type transaksi_pembayaranCreateInput = {
-  id_transaksi: number
   metode_pembayaran: string
   nominal_bayar: runtime.Decimal | runtime.DecimalJsLike | number | string
   catatan?: string | null
   created_at?: Date | string
+  transaksi: Prisma.transaksiCreateNestedOneWithoutTransaksi_pembayaranInput
 }
 
 export type transaksi_pembayaranUncheckedCreateInput = {
@@ -300,11 +303,11 @@ export type transaksi_pembayaranUncheckedCreateInput = {
 }
 
 export type transaksi_pembayaranUpdateInput = {
-  id_transaksi?: Prisma.IntFieldUpdateOperationsInput | number
   metode_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
   nominal_bayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  transaksi?: Prisma.transaksiUpdateOneRequiredWithoutTransaksi_pembayaranNestedInput
 }
 
 export type transaksi_pembayaranUncheckedUpdateInput = {
@@ -326,7 +329,6 @@ export type transaksi_pembayaranCreateManyInput = {
 }
 
 export type transaksi_pembayaranUpdateManyMutationInput = {
-  id_transaksi?: Prisma.IntFieldUpdateOperationsInput | number
   metode_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
   nominal_bayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -340,6 +342,16 @@ export type transaksi_pembayaranUncheckedUpdateManyInput = {
   nominal_bayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type Transaksi_pembayaranListRelationFilter = {
+  every?: Prisma.transaksi_pembayaranWhereInput
+  some?: Prisma.transaksi_pembayaranWhereInput
+  none?: Prisma.transaksi_pembayaranWhereInput
+}
+
+export type transaksi_pembayaranOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type transaksi_pembayaranOrderByRelevanceInput = {
@@ -387,6 +399,132 @@ export type transaksi_pembayaranSumOrderByAggregateInput = {
   nominal_bayar?: Prisma.SortOrder
 }
 
+export type transaksi_pembayaranCreateNestedManyWithoutTransaksiInput = {
+  create?: Prisma.XOR<Prisma.transaksi_pembayaranCreateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput> | Prisma.transaksi_pembayaranCreateWithoutTransaksiInput[] | Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput[]
+  connectOrCreate?: Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput | Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput[]
+  createMany?: Prisma.transaksi_pembayaranCreateManyTransaksiInputEnvelope
+  connect?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+}
+
+export type transaksi_pembayaranUncheckedCreateNestedManyWithoutTransaksiInput = {
+  create?: Prisma.XOR<Prisma.transaksi_pembayaranCreateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput> | Prisma.transaksi_pembayaranCreateWithoutTransaksiInput[] | Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput[]
+  connectOrCreate?: Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput | Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput[]
+  createMany?: Prisma.transaksi_pembayaranCreateManyTransaksiInputEnvelope
+  connect?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+}
+
+export type transaksi_pembayaranUpdateManyWithoutTransaksiNestedInput = {
+  create?: Prisma.XOR<Prisma.transaksi_pembayaranCreateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput> | Prisma.transaksi_pembayaranCreateWithoutTransaksiInput[] | Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput[]
+  connectOrCreate?: Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput | Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput[]
+  upsert?: Prisma.transaksi_pembayaranUpsertWithWhereUniqueWithoutTransaksiInput | Prisma.transaksi_pembayaranUpsertWithWhereUniqueWithoutTransaksiInput[]
+  createMany?: Prisma.transaksi_pembayaranCreateManyTransaksiInputEnvelope
+  set?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  disconnect?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  delete?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  connect?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  update?: Prisma.transaksi_pembayaranUpdateWithWhereUniqueWithoutTransaksiInput | Prisma.transaksi_pembayaranUpdateWithWhereUniqueWithoutTransaksiInput[]
+  updateMany?: Prisma.transaksi_pembayaranUpdateManyWithWhereWithoutTransaksiInput | Prisma.transaksi_pembayaranUpdateManyWithWhereWithoutTransaksiInput[]
+  deleteMany?: Prisma.transaksi_pembayaranScalarWhereInput | Prisma.transaksi_pembayaranScalarWhereInput[]
+}
+
+export type transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiNestedInput = {
+  create?: Prisma.XOR<Prisma.transaksi_pembayaranCreateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput> | Prisma.transaksi_pembayaranCreateWithoutTransaksiInput[] | Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput[]
+  connectOrCreate?: Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput | Prisma.transaksi_pembayaranCreateOrConnectWithoutTransaksiInput[]
+  upsert?: Prisma.transaksi_pembayaranUpsertWithWhereUniqueWithoutTransaksiInput | Prisma.transaksi_pembayaranUpsertWithWhereUniqueWithoutTransaksiInput[]
+  createMany?: Prisma.transaksi_pembayaranCreateManyTransaksiInputEnvelope
+  set?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  disconnect?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  delete?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  connect?: Prisma.transaksi_pembayaranWhereUniqueInput | Prisma.transaksi_pembayaranWhereUniqueInput[]
+  update?: Prisma.transaksi_pembayaranUpdateWithWhereUniqueWithoutTransaksiInput | Prisma.transaksi_pembayaranUpdateWithWhereUniqueWithoutTransaksiInput[]
+  updateMany?: Prisma.transaksi_pembayaranUpdateManyWithWhereWithoutTransaksiInput | Prisma.transaksi_pembayaranUpdateManyWithWhereWithoutTransaksiInput[]
+  deleteMany?: Prisma.transaksi_pembayaranScalarWhereInput | Prisma.transaksi_pembayaranScalarWhereInput[]
+}
+
+export type transaksi_pembayaranCreateWithoutTransaksiInput = {
+  metode_pembayaran: string
+  nominal_bayar: runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: string | null
+  created_at?: Date | string
+}
+
+export type transaksi_pembayaranUncheckedCreateWithoutTransaksiInput = {
+  id?: number
+  metode_pembayaran: string
+  nominal_bayar: runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: string | null
+  created_at?: Date | string
+}
+
+export type transaksi_pembayaranCreateOrConnectWithoutTransaksiInput = {
+  where: Prisma.transaksi_pembayaranWhereUniqueInput
+  create: Prisma.XOR<Prisma.transaksi_pembayaranCreateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput>
+}
+
+export type transaksi_pembayaranCreateManyTransaksiInputEnvelope = {
+  data: Prisma.transaksi_pembayaranCreateManyTransaksiInput | Prisma.transaksi_pembayaranCreateManyTransaksiInput[]
+  skipDuplicates?: boolean
+}
+
+export type transaksi_pembayaranUpsertWithWhereUniqueWithoutTransaksiInput = {
+  where: Prisma.transaksi_pembayaranWhereUniqueInput
+  update: Prisma.XOR<Prisma.transaksi_pembayaranUpdateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedUpdateWithoutTransaksiInput>
+  create: Prisma.XOR<Prisma.transaksi_pembayaranCreateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedCreateWithoutTransaksiInput>
+}
+
+export type transaksi_pembayaranUpdateWithWhereUniqueWithoutTransaksiInput = {
+  where: Prisma.transaksi_pembayaranWhereUniqueInput
+  data: Prisma.XOR<Prisma.transaksi_pembayaranUpdateWithoutTransaksiInput, Prisma.transaksi_pembayaranUncheckedUpdateWithoutTransaksiInput>
+}
+
+export type transaksi_pembayaranUpdateManyWithWhereWithoutTransaksiInput = {
+  where: Prisma.transaksi_pembayaranScalarWhereInput
+  data: Prisma.XOR<Prisma.transaksi_pembayaranUpdateManyMutationInput, Prisma.transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiInput>
+}
+
+export type transaksi_pembayaranScalarWhereInput = {
+  AND?: Prisma.transaksi_pembayaranScalarWhereInput | Prisma.transaksi_pembayaranScalarWhereInput[]
+  OR?: Prisma.transaksi_pembayaranScalarWhereInput[]
+  NOT?: Prisma.transaksi_pembayaranScalarWhereInput | Prisma.transaksi_pembayaranScalarWhereInput[]
+  id?: Prisma.IntFilter<"transaksi_pembayaran"> | number
+  id_transaksi?: Prisma.IntFilter<"transaksi_pembayaran"> | number
+  metode_pembayaran?: Prisma.StringFilter<"transaksi_pembayaran"> | string
+  nominal_bayar?: Prisma.DecimalFilter<"transaksi_pembayaran"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: Prisma.StringNullableFilter<"transaksi_pembayaran"> | string | null
+  created_at?: Prisma.DateTimeFilter<"transaksi_pembayaran"> | Date | string
+}
+
+export type transaksi_pembayaranCreateManyTransaksiInput = {
+  id?: number
+  metode_pembayaran: string
+  nominal_bayar: runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: string | null
+  created_at?: Date | string
+}
+
+export type transaksi_pembayaranUpdateWithoutTransaksiInput = {
+  metode_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
+  nominal_bayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type transaksi_pembayaranUncheckedUpdateWithoutTransaksiInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  metode_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
+  nominal_bayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  metode_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
+  nominal_bayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 
 
 export type transaksi_pembayaranSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -396,6 +534,7 @@ export type transaksi_pembayaranSelect<ExtArgs extends runtime.Types.Extensions.
   nominal_bayar?: boolean
   catatan?: boolean
   created_at?: boolean
+  transaksi?: boolean | Prisma.transaksiDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["transaksi_pembayaran"]>
 
 
@@ -410,10 +549,15 @@ export type transaksi_pembayaranSelectScalar = {
 }
 
 export type transaksi_pembayaranOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "id_transaksi" | "metode_pembayaran" | "nominal_bayar" | "catatan" | "created_at", ExtArgs["result"]["transaksi_pembayaran"]>
+export type transaksi_pembayaranInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  transaksi?: boolean | Prisma.transaksiDefaultArgs<ExtArgs>
+}
 
 export type $transaksi_pembayaranPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "transaksi_pembayaran"
-  objects: {}
+  objects: {
+    transaksi: Prisma.$transaksiPayload<ExtArgs>
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     id_transaksi: number
@@ -761,6 +905,7 @@ readonly fields: transaksi_pembayaranFieldRefs;
  */
 export interface Prisma__transaksi_pembayaranClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  transaksi<T extends Prisma.transaksiDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.transaksiDefaultArgs<ExtArgs>>): Prisma.Prisma__transaksiClient<runtime.Types.Result.GetResult<Prisma.$transaksiPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -813,6 +958,10 @@ export type transaksi_pembayaranFindUniqueArgs<ExtArgs extends runtime.Types.Ext
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  /**
    * Filter, which transaksi_pembayaran to fetch.
    */
   where: Prisma.transaksi_pembayaranWhereUniqueInput
@@ -831,6 +980,10 @@ export type transaksi_pembayaranFindUniqueOrThrowArgs<ExtArgs extends runtime.Ty
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  /**
    * Filter, which transaksi_pembayaran to fetch.
    */
   where: Prisma.transaksi_pembayaranWhereUniqueInput
@@ -848,6 +1001,10 @@ export type transaksi_pembayaranFindFirstArgs<ExtArgs extends runtime.Types.Exte
    * Omit specific fields from the transaksi_pembayaran
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
   /**
    * Filter, which transaksi_pembayaran to fetch.
    */
@@ -897,6 +1054,10 @@ export type transaksi_pembayaranFindFirstOrThrowArgs<ExtArgs extends runtime.Typ
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  /**
    * Filter, which transaksi_pembayaran to fetch.
    */
   where?: Prisma.transaksi_pembayaranWhereInput
@@ -945,6 +1106,10 @@ export type transaksi_pembayaranFindManyArgs<ExtArgs extends runtime.Types.Exten
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  /**
    * Filter, which transaksi_pembayarans to fetch.
    */
   where?: Prisma.transaksi_pembayaranWhereInput
@@ -988,6 +1153,10 @@ export type transaksi_pembayaranCreateArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  /**
    * The data needed to create a transaksi_pembayaran.
    */
   data: Prisma.XOR<Prisma.transaksi_pembayaranCreateInput, Prisma.transaksi_pembayaranUncheckedCreateInput>
@@ -1016,6 +1185,10 @@ export type transaksi_pembayaranUpdateArgs<ExtArgs extends runtime.Types.Extensi
    * Omit specific fields from the transaksi_pembayaran
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
   /**
    * The data needed to update a transaksi_pembayaran.
    */
@@ -1057,6 +1230,10 @@ export type transaksi_pembayaranUpsertArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  /**
    * The filter to search for the transaksi_pembayaran to update in case it exists.
    */
   where: Prisma.transaksi_pembayaranWhereUniqueInput
@@ -1082,6 +1259,10 @@ export type transaksi_pembayaranDeleteArgs<ExtArgs extends runtime.Types.Extensi
    * Omit specific fields from the transaksi_pembayaran
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
   /**
    * Filter which transaksi_pembayaran to delete.
    */
@@ -1114,4 +1295,8 @@ export type transaksi_pembayaranDefaultArgs<ExtArgs extends runtime.Types.Extens
    * Omit specific fields from the transaksi_pembayaran
    */
   omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
 }

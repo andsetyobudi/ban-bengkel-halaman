@@ -99,8 +99,14 @@ export async function DELETE(
     }
     await prisma.produk.delete({ where: { id } })
     return NextResponse.json({ success: true })
-  } catch (e) {
+  } catch (e: any) {
     console.error("Delete product error:", e)
+    if (e.code === 'P2003') {
+      return NextResponse.json(
+        { error: "Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi atau transfer stok." },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: "Gagal menghapus produk." },
       { status: 500 }

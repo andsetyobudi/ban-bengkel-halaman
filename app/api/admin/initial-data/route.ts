@@ -33,6 +33,7 @@ export async function GET() {
       customersRows,
       transfersRows,
       transaksiRows,
+      piutangRows,
     ] = await Promise.all([
       prisma.outlet.findMany({ orderBy: { id: "asc" } }),
       prisma.users.findMany({ orderBy: { id: "asc" } }),
@@ -53,9 +54,29 @@ export async function GET() {
         orderBy: { created_at: "desc" },
       }),
       prisma.transaksi.findMany({
-        include: { pelanggan: true, outlet: true, transaksi_detail: { include: { produk: true } } },
+        include: {
+          pelanggan: true,
+          outlet: true,
+          transaksi_detail: { include: { produk: true } },
+          transaksi_pembayaran: true,
+        },
         orderBy: { tanggal: "desc" },
         take: 200,
+      }),
+      // Separate query for piutang: fetch ALL transactions with outstanding balance
+      // This ensures piutang data is not limited by the `take: 200` on general transactions
+      prisma.transaksi.findMany({
+        where: {
+          OR: [
+            { sisa_tagihan: { gt: 0 } },
+            { status_pembayaran: { not: "Lunas" } },
+          ],
+        },
+        include: {
+          pelanggan: true,
+          outlet: true,
+        },
+        orderBy: { tanggal: "desc" },
       }),
     ]);
 
@@ -95,11 +116,11 @@ export async function GET() {
       outletId: String(c.id_outlet),
     }));
 
-    const transferStatusMap: Record<string, "pending" | "diterima" | "selesai"> = {
+    const transferStatusMap: Record<string, "pending" | "diterima" | "selesai" | "dibatalkan"> = {
       diajukan: "pending",
       dikirim: "diterima",
       diterima: "selesai",
-      ditolak: "pending",
+      ditolak: "dibatalkan",
     };
     const transfers = transfersRows.map((t) => ({
       id: String(t.id),
@@ -117,20 +138,18 @@ export async function GET() {
       createdAt: t.created_at.toISOString(),
     }));
 
-    const piutang = transaksiRows
-      .filter((t) => Number(t.sisa_tagihan) > 0 || t.status_pembayaran !== "Lunas")
-      .map((t) => ({
-        id: String(t.id),
-        invoice: t.nomor_invoice,
-        date: t.tanggal.toISOString().slice(0, 10),
-        customerId: t.id_pelanggan != null ? String(t.id_pelanggan) : "",
-        customerName: t.pelanggan?.nama_pelanggan ?? "",
-        nopol: t.nopol ?? "",
-        total: Number(t.total_pembayaran),
-        paid: Number(t.total_terbayar),
-        outletId: String(t.id_outlet),
-        status: Number(t.sisa_tagihan) > 0 ? ("belum_lunas" as const) : ("lunas" as const),
-      }));
+    const piutang = piutangRows.map((t) => ({
+      id: String(t.id),
+      invoice: t.nomor_invoice,
+      date: t.tanggal.toISOString().slice(0, 10),
+      customerId: t.id_pelanggan != null ? String(t.id_pelanggan) : "",
+      customerName: t.pelanggan?.nama_pelanggan ?? "",
+      nopol: t.nopol ?? "",
+      total: Number(t.total_pembayaran),
+      paid: Number(t.total_terbayar),
+      outletId: String(t.id_outlet),
+      status: Number(t.sisa_tagihan) > 0 ? ("belum_lunas" as const) : ("lunas" as const),
+    }));
 
     const transactions = transaksiRows.map((t) => {
       const items = t.transaksi_detail.map((d) => ({
@@ -142,6 +161,17 @@ export async function GET() {
       const total = Number(t.total_pembayaran);
       const nominalBayar = Number(t.total_terbayar);
       const sisa = Number(t.sisa_tagihan);
+
+      const payments = t.transaksi_pembayaran.map((p) => ({
+        method: p.metode_pembayaran,
+        amount: Number(p.nominal_bayar),
+      }));
+
+      // Fallback if no payments recorded but it's paid (legacy data?)
+      if (payments.length === 0 && nominalBayar > 0) {
+        payments.push({ method: "tunai", amount: nominalBayar });
+      }
+
       return {
         id: String(t.id),
         invoice: t.nomor_invoice,
@@ -154,8 +184,8 @@ export async function GET() {
         subtotal: total,
         discount: Number(t.diskon ?? 0),
         total,
-        paymentType: "penuh" as const,
-        payments: [] as { method: string; amount: number }[],
+        paymentType: sisa > 0 ? ("campuran" as const) : ("penuh" as const),
+        payments,
         nominalBayar,
         sisa,
         isPiutang: sisa > 0,

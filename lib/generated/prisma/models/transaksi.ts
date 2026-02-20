@@ -327,6 +327,7 @@ export type transaksiWhereInput = {
   pelanggan?: Prisma.XOR<Prisma.PelangganNullableScalarRelationFilter, Prisma.pelangganWhereInput> | null
   outlet?: Prisma.XOR<Prisma.OutletScalarRelationFilter, Prisma.outletWhereInput>
   transaksi_detail?: Prisma.Transaksi_detailListRelationFilter
+  transaksi_pembayaran?: Prisma.Transaksi_pembayaranListRelationFilter
 }
 
 export type transaksiOrderByWithRelationInput = {
@@ -348,6 +349,7 @@ export type transaksiOrderByWithRelationInput = {
   pelanggan?: Prisma.pelangganOrderByWithRelationInput
   outlet?: Prisma.outletOrderByWithRelationInput
   transaksi_detail?: Prisma.transaksi_detailOrderByRelationAggregateInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranOrderByRelationAggregateInput
   _relevance?: Prisma.transaksiOrderByRelevanceInput
 }
 
@@ -373,6 +375,7 @@ export type transaksiWhereUniqueInput = Prisma.AtLeast<{
   pelanggan?: Prisma.XOR<Prisma.PelangganNullableScalarRelationFilter, Prisma.pelangganWhereInput> | null
   outlet?: Prisma.XOR<Prisma.OutletScalarRelationFilter, Prisma.outletWhereInput>
   transaksi_detail?: Prisma.Transaksi_detailListRelationFilter
+  transaksi_pembayaran?: Prisma.Transaksi_pembayaranListRelationFilter
 }, "id" | "nomor_invoice">
 
 export type transaksiOrderByWithAggregationInput = {
@@ -435,6 +438,7 @@ export type transaksiCreateInput = {
   pelanggan?: Prisma.pelangganCreateNestedOneWithoutTransaksiInput
   outlet: Prisma.outletCreateNestedOneWithoutTransaksiInput
   transaksi_detail?: Prisma.transaksi_detailCreateNestedManyWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiUncheckedCreateInput = {
@@ -454,6 +458,7 @@ export type transaksiUncheckedCreateInput = {
   sisa_tagihan?: runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   transaksi_detail?: Prisma.transaksi_detailUncheckedCreateNestedManyWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiUpdateInput = {
@@ -472,6 +477,7 @@ export type transaksiUpdateInput = {
   pelanggan?: Prisma.pelangganUpdateOneWithoutTransaksiNestedInput
   outlet?: Prisma.outletUpdateOneRequiredWithoutTransaksiNestedInput
   transaksi_detail?: Prisma.transaksi_detailUpdateManyWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiUncheckedUpdateInput = {
@@ -491,6 +497,7 @@ export type transaksiUncheckedUpdateInput = {
   sisa_tagihan?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   transaksi_detail?: Prisma.transaksi_detailUncheckedUpdateManyWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiCreateManyInput = {
@@ -755,6 +762,20 @@ export type transaksiUpdateOneRequiredWithoutTransaksi_detailNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.transaksiUpdateToOneWithWhereWithoutTransaksi_detailInput, Prisma.transaksiUpdateWithoutTransaksi_detailInput>, Prisma.transaksiUncheckedUpdateWithoutTransaksi_detailInput>
 }
 
+export type transaksiCreateNestedOneWithoutTransaksi_pembayaranInput = {
+  create?: Prisma.XOR<Prisma.transaksiCreateWithoutTransaksi_pembayaranInput, Prisma.transaksiUncheckedCreateWithoutTransaksi_pembayaranInput>
+  connectOrCreate?: Prisma.transaksiCreateOrConnectWithoutTransaksi_pembayaranInput
+  connect?: Prisma.transaksiWhereUniqueInput
+}
+
+export type transaksiUpdateOneRequiredWithoutTransaksi_pembayaranNestedInput = {
+  create?: Prisma.XOR<Prisma.transaksiCreateWithoutTransaksi_pembayaranInput, Prisma.transaksiUncheckedCreateWithoutTransaksi_pembayaranInput>
+  connectOrCreate?: Prisma.transaksiCreateOrConnectWithoutTransaksi_pembayaranInput
+  upsert?: Prisma.transaksiUpsertWithoutTransaksi_pembayaranInput
+  connect?: Prisma.transaksiWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.transaksiUpdateToOneWithWhereWithoutTransaksi_pembayaranInput, Prisma.transaksiUpdateWithoutTransaksi_pembayaranInput>, Prisma.transaksiUncheckedUpdateWithoutTransaksi_pembayaranInput>
+}
+
 export type transaksiCreateWithoutOutletInput = {
   id_user?: number | null
   nomor_invoice: string
@@ -770,6 +791,7 @@ export type transaksiCreateWithoutOutletInput = {
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   pelanggan?: Prisma.pelangganCreateNestedOneWithoutTransaksiInput
   transaksi_detail?: Prisma.transaksi_detailCreateNestedManyWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiUncheckedCreateWithoutOutletInput = {
@@ -788,6 +810,7 @@ export type transaksiUncheckedCreateWithoutOutletInput = {
   sisa_tagihan?: runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   transaksi_detail?: Prisma.transaksi_detailUncheckedCreateNestedManyWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiCreateOrConnectWithoutOutletInput = {
@@ -852,6 +875,7 @@ export type transaksiCreateWithoutPelangganInput = {
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   outlet: Prisma.outletCreateNestedOneWithoutTransaksiInput
   transaksi_detail?: Prisma.transaksi_detailCreateNestedManyWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiUncheckedCreateWithoutPelangganInput = {
@@ -870,6 +894,7 @@ export type transaksiUncheckedCreateWithoutPelangganInput = {
   sisa_tagihan?: runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   transaksi_detail?: Prisma.transaksi_detailUncheckedCreateNestedManyWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiCreateOrConnectWithoutPelangganInput = {
@@ -913,6 +938,7 @@ export type transaksiCreateWithoutTransaksi_detailInput = {
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   pelanggan?: Prisma.pelangganCreateNestedOneWithoutTransaksiInput
   outlet: Prisma.outletCreateNestedOneWithoutTransaksiInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiUncheckedCreateWithoutTransaksi_detailInput = {
@@ -931,6 +957,7 @@ export type transaksiUncheckedCreateWithoutTransaksi_detailInput = {
   tanggal_lunas?: Date | string | null
   sisa_tagihan?: runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedCreateNestedManyWithoutTransaksiInput
 }
 
 export type transaksiCreateOrConnectWithoutTransaksi_detailInput = {
@@ -964,6 +991,7 @@ export type transaksiUpdateWithoutTransaksi_detailInput = {
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   pelanggan?: Prisma.pelangganUpdateOneWithoutTransaksiNestedInput
   outlet?: Prisma.outletUpdateOneRequiredWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiUncheckedUpdateWithoutTransaksi_detailInput = {
@@ -982,6 +1010,97 @@ export type transaksiUncheckedUpdateWithoutTransaksi_detailInput = {
   tanggal_lunas?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sisa_tagihan?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiNestedInput
+}
+
+export type transaksiCreateWithoutTransaksi_pembayaranInput = {
+  id_user?: number | null
+  nomor_invoice: string
+  tanggal: Date | string
+  nopol?: string | null
+  mobil?: string | null
+  catatan?: string | null
+  total_pembayaran: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_terbayar?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status_pembayaran?: string
+  tanggal_lunas?: Date | string | null
+  sisa_tagihan?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pelanggan?: Prisma.pelangganCreateNestedOneWithoutTransaksiInput
+  outlet: Prisma.outletCreateNestedOneWithoutTransaksiInput
+  transaksi_detail?: Prisma.transaksi_detailCreateNestedManyWithoutTransaksiInput
+}
+
+export type transaksiUncheckedCreateWithoutTransaksi_pembayaranInput = {
+  id?: number
+  id_pelanggan?: number | null
+  id_outlet: number
+  id_user?: number | null
+  nomor_invoice: string
+  tanggal: Date | string
+  nopol?: string | null
+  mobil?: string | null
+  catatan?: string | null
+  total_pembayaran: runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_terbayar?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status_pembayaran?: string
+  tanggal_lunas?: Date | string | null
+  sisa_tagihan?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  diskon?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  transaksi_detail?: Prisma.transaksi_detailUncheckedCreateNestedManyWithoutTransaksiInput
+}
+
+export type transaksiCreateOrConnectWithoutTransaksi_pembayaranInput = {
+  where: Prisma.transaksiWhereUniqueInput
+  create: Prisma.XOR<Prisma.transaksiCreateWithoutTransaksi_pembayaranInput, Prisma.transaksiUncheckedCreateWithoutTransaksi_pembayaranInput>
+}
+
+export type transaksiUpsertWithoutTransaksi_pembayaranInput = {
+  update: Prisma.XOR<Prisma.transaksiUpdateWithoutTransaksi_pembayaranInput, Prisma.transaksiUncheckedUpdateWithoutTransaksi_pembayaranInput>
+  create: Prisma.XOR<Prisma.transaksiCreateWithoutTransaksi_pembayaranInput, Prisma.transaksiUncheckedCreateWithoutTransaksi_pembayaranInput>
+  where?: Prisma.transaksiWhereInput
+}
+
+export type transaksiUpdateToOneWithWhereWithoutTransaksi_pembayaranInput = {
+  where?: Prisma.transaksiWhereInput
+  data: Prisma.XOR<Prisma.transaksiUpdateWithoutTransaksi_pembayaranInput, Prisma.transaksiUncheckedUpdateWithoutTransaksi_pembayaranInput>
+}
+
+export type transaksiUpdateWithoutTransaksi_pembayaranInput = {
+  id_user?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  nomor_invoice?: Prisma.StringFieldUpdateOperationsInput | string
+  tanggal?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nopol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mobil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total_pembayaran?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_terbayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
+  tanggal_lunas?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sisa_tagihan?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  pelanggan?: Prisma.pelangganUpdateOneWithoutTransaksiNestedInput
+  outlet?: Prisma.outletUpdateOneRequiredWithoutTransaksiNestedInput
+  transaksi_detail?: Prisma.transaksi_detailUpdateManyWithoutTransaksiNestedInput
+}
+
+export type transaksiUncheckedUpdateWithoutTransaksi_pembayaranInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  id_pelanggan?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  id_outlet?: Prisma.IntFieldUpdateOperationsInput | number
+  id_user?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  nomor_invoice?: Prisma.StringFieldUpdateOperationsInput | string
+  tanggal?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nopol?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mobil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  catatan?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total_pembayaran?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  total_terbayar?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status_pembayaran?: Prisma.StringFieldUpdateOperationsInput | string
+  tanggal_lunas?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sisa_tagihan?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  transaksi_detail?: Prisma.transaksi_detailUncheckedUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiCreateManyOutletInput = {
@@ -1016,6 +1135,7 @@ export type transaksiUpdateWithoutOutletInput = {
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   pelanggan?: Prisma.pelangganUpdateOneWithoutTransaksiNestedInput
   transaksi_detail?: Prisma.transaksi_detailUpdateManyWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiUncheckedUpdateWithoutOutletInput = {
@@ -1034,6 +1154,7 @@ export type transaksiUncheckedUpdateWithoutOutletInput = {
   sisa_tagihan?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   transaksi_detail?: Prisma.transaksi_detailUncheckedUpdateManyWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiUncheckedUpdateManyWithoutOutletInput = {
@@ -1085,6 +1206,7 @@ export type transaksiUpdateWithoutPelangganInput = {
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   outlet?: Prisma.outletUpdateOneRequiredWithoutTransaksiNestedInput
   transaksi_detail?: Prisma.transaksi_detailUpdateManyWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiUncheckedUpdateWithoutPelangganInput = {
@@ -1103,6 +1225,7 @@ export type transaksiUncheckedUpdateWithoutPelangganInput = {
   sisa_tagihan?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   diskon?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   transaksi_detail?: Prisma.transaksi_detailUncheckedUpdateManyWithoutTransaksiNestedInput
+  transaksi_pembayaran?: Prisma.transaksi_pembayaranUncheckedUpdateManyWithoutTransaksiNestedInput
 }
 
 export type transaksiUncheckedUpdateManyWithoutPelangganInput = {
@@ -1129,10 +1252,12 @@ export type transaksiUncheckedUpdateManyWithoutPelangganInput = {
 
 export type TransaksiCountOutputType = {
   transaksi_detail: number
+  transaksi_pembayaran: number
 }
 
 export type TransaksiCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transaksi_detail?: boolean | TransaksiCountOutputTypeCountTransaksi_detailArgs
+  transaksi_pembayaran?: boolean | TransaksiCountOutputTypeCountTransaksi_pembayaranArgs
 }
 
 /**
@@ -1150,6 +1275,13 @@ export type TransaksiCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ex
  */
 export type TransaksiCountOutputTypeCountTransaksi_detailArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.transaksi_detailWhereInput
+}
+
+/**
+ * TransaksiCountOutputType without action
+ */
+export type TransaksiCountOutputTypeCountTransaksi_pembayaranArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.transaksi_pembayaranWhereInput
 }
 
 
@@ -1172,6 +1304,7 @@ export type transaksiSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   pelanggan?: boolean | Prisma.transaksi$pelangganArgs<ExtArgs>
   outlet?: boolean | Prisma.outletDefaultArgs<ExtArgs>
   transaksi_detail?: boolean | Prisma.transaksi$transaksi_detailArgs<ExtArgs>
+  transaksi_pembayaran?: boolean | Prisma.transaksi$transaksi_pembayaranArgs<ExtArgs>
   _count?: boolean | Prisma.TransaksiCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["transaksi"]>
 
@@ -1200,6 +1333,7 @@ export type transaksiInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   pelanggan?: boolean | Prisma.transaksi$pelangganArgs<ExtArgs>
   outlet?: boolean | Prisma.outletDefaultArgs<ExtArgs>
   transaksi_detail?: boolean | Prisma.transaksi$transaksi_detailArgs<ExtArgs>
+  transaksi_pembayaran?: boolean | Prisma.transaksi$transaksi_pembayaranArgs<ExtArgs>
   _count?: boolean | Prisma.TransaksiCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -1209,6 +1343,7 @@ export type $transaksiPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     pelanggan: Prisma.$pelangganPayload<ExtArgs> | null
     outlet: Prisma.$outletPayload<ExtArgs>
     transaksi_detail: Prisma.$transaksi_detailPayload<ExtArgs>[]
+    transaksi_pembayaran: Prisma.$transaksi_pembayaranPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1569,6 +1704,7 @@ export interface Prisma__transaksiClient<T, Null = never, ExtArgs extends runtim
   pelanggan<T extends Prisma.transaksi$pelangganArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.transaksi$pelangganArgs<ExtArgs>>): Prisma.Prisma__pelangganClient<runtime.Types.Result.GetResult<Prisma.$pelangganPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   outlet<T extends Prisma.outletDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.outletDefaultArgs<ExtArgs>>): Prisma.Prisma__outletClient<runtime.Types.Result.GetResult<Prisma.$outletPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   transaksi_detail<T extends Prisma.transaksi$transaksi_detailArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.transaksi$transaksi_detailArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$transaksi_detailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  transaksi_pembayaran<T extends Prisma.transaksi$transaksi_pembayaranArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.transaksi$transaksi_pembayaranArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$transaksi_pembayaranPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1996,6 +2132,30 @@ export type transaksi$transaksi_detailArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.Transaksi_detailScalarFieldEnum | Prisma.Transaksi_detailScalarFieldEnum[]
+}
+
+/**
+ * transaksi.transaksi_pembayaran
+ */
+export type transaksi$transaksi_pembayaranArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the transaksi_pembayaran
+   */
+  select?: Prisma.transaksi_pembayaranSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the transaksi_pembayaran
+   */
+  omit?: Prisma.transaksi_pembayaranOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.transaksi_pembayaranInclude<ExtArgs> | null
+  where?: Prisma.transaksi_pembayaranWhereInput
+  orderBy?: Prisma.transaksi_pembayaranOrderByWithRelationInput | Prisma.transaksi_pembayaranOrderByWithRelationInput[]
+  cursor?: Prisma.transaksi_pembayaranWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Transaksi_pembayaranScalarFieldEnum | Prisma.Transaksi_pembayaranScalarFieldEnum[]
 }
 
 /**

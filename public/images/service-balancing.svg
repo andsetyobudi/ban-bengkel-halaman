@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1b2a"/>
+      <stop offset="100%" style="stop-color:#1b2838"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+  <!-- Circle decoration -->
+  <circle cx="200" cy="600" r="250" fill="rgba(255,255,255,0.03)"/>
+  <circle cx="1000" cy="200" r="300" fill="rgba(255,255,255,0.03)"/>
+  <!-- Tire icon -->
+  <g transform="translate(600,350)">
+    <circle cx="0" cy="0" r="90" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="10"/>
+    <circle cx="0" cy="0" r="80" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4" stroke-dasharray="12 8"/>
+    <line x1="0" y1="0" x2="40" y2="-60" stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="10" fill="rgba(255,255,255,0.3)"/>
+  </g>
+  <!-- Label -->
+  <text x="600" y="560" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Arial, sans-serif" font-size="28" font-weight="bold">Spooring & Balancing</text>
+  <text x="600" y="600" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="Arial, sans-serif" font-size="16">CarProBan - Bengkel Ban Profesional</text>
+</svg>

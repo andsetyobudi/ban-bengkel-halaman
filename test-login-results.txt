@@ -1,0 +1,22 @@
+=== USERS ===
+id=2 name=Andy Setyo Budi email/username=andsetyobudi role=super_admin outletId=none
+id=10 name=Admin - CAHAYA BAN email/username=cahayaban role=outlet_admin outletId=2
+id=11 name=Admin - CARPROBAN email/username=carproban role=outlet_admin outletId=1
+id=12 name=Fathimatuzzahro email/username=fzahro09 role=super_admin outletId=none
+
+=== LOGIN TESTS ===
+admin/admin -> 401 {"error":"Username atau password salah."}
+admin/admin -> 401 {"error":"Username atau password salah."}
+admin/123456 -> 401 {"error":"Username atau password salah."}
+andysetyobudi/admin -> 401 {"error":"Username atau password salah."}
+andysetyobudi/andysetyobudi -> 401 {"error":"Username atau password salah."}
+andysetyobudi/123456 -> 401 {"error":"Username atau password salah."}
+fzahro09/admin -> 401 {"error":"Username atau password salah."}
+fzahro09/fzahro09 -> 200 {"user":{"id":"12","name":"Fathimatuzzahro","email":"fzahro09","role":"super_admin"}}
+fzahro09/123456 -> 401 {"error":"Username atau password salah."}
+andy/admin -> 401 {"error":"Username atau password salah."}
+andy/andy -> 401 {"error":"Username atau password salah."}
+andy/123456 -> 401 {"error":"Username atau password salah."}
+Admin/admin -> 401 {"error":"Username atau password salah."}
+Admin/Admin -> 401 {"error":"Username atau password salah."}
+Admin/123456 -> 401 {"error":"Username atau password salah."}

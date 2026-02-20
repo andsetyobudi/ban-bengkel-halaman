@@ -35,9 +35,9 @@ const services = [
 ]
 
 const serviceImages = [
-  { src: "/images/service-repair.jpg", alt: "Proses tambal ban oleh teknisi ahli" },
-  { src: "/images/service-balancing.jpg", alt: "Mesin balancing roda modern" },
-  { src: "/images/service-replacement.jpg", alt: "Koleksi ban baru berkualitas" },
+  { src: "/images/service-repair.svg", alt: "Proses tambal ban oleh teknisi ahli" },
+  { src: "/images/service-balancing.svg", alt: "Mesin balancing roda modern" },
+  { src: "/images/service-replacement.svg", alt: "Koleksi ban baru berkualitas" },
 ]
 
 export function Services() {

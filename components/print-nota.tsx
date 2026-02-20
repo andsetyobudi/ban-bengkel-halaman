@@ -13,6 +13,7 @@ const PAYMENT_LABELS: Record<PaymentMethodType, string> = {
 }
 
 function formatRupiah(num: number) {
+  if (num == null) return "Rp 0"
   return "Rp " + num.toLocaleString("id-ID")
 }
 
@@ -41,11 +42,18 @@ function formatDateSlash(dateStr: string) {
 
 type PaperSize = "a4" | "thermal"
 
+function getOutletLogo(outletName: string): string {
+  const name = outletName.toLowerCase()
+  if (name.includes("cahaya")) return "/images/logo-cahayaban.png"
+  return "/images/logo-carproban.png"
+}
+
 function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize, outlets: Outlet[]): string {
   const outlet = outlets.find((o) => o.id === tx.outletId)
   const outletName = outlet?.name ?? "Bengkel"
   const outletAddress = outlet?.address ?? ""
-  const outletPhone = outlet?.phone ?? ""
+  const outletPhone = outlet?.phone || "0819-9793-6676"
+  const logoUrl = getOutletLogo(outletName)
 
   const isThermal = paperSize === "thermal"
   const pageWidth = isThermal ? "58mm" : "210mm"
@@ -139,6 +147,7 @@ function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize, outlets: Out
 <body>
   <div class="container">
     <div class="header">
+      <img src="${logoUrl}" alt="Logo" style="width:40mm;max-height:20mm;object-fit:contain;margin-bottom:4px;" onerror="this.style.display='none'" />
       <h3>${outletName}</h3>
       <p>${outletAddress}</p>
       <p>Telp/WA : ${outletPhone}</p>
@@ -216,7 +225,7 @@ function buildNotaHTML(tx: TransactionRecord, paperSize: PaperSize, outlets: Out
   <tr>
     <td style="width:${logoSize};">
       <div style="width:${logoSize};height:${logoSize};border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;">
-        <img src="/images/logo-nota.jpg" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=font-size:10px;color:#999>LOGO</span>'" />
+        <img src="${logoUrl}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=font-size:10px;color:#999>LOGO</span>'" />
       </div>
     </td>
     <td style="padding-left:16px;">
@@ -308,6 +317,7 @@ export function usePrintNota() {
   const { outlets } = useOutlet()
 
   const printNota = useCallback((tx: TransactionRecord, paperSize: PaperSize) => {
+    console.log("Printing nota:", tx.invoice, paperSize)
     // Remove previous iframe if any
     if (printFrameRef.current) {
       document.body.removeChild(printFrameRef.current)
@@ -327,21 +337,30 @@ export function usePrintNota() {
     if (!doc) return
 
     const html = buildNotaHTML(tx, paperSize, outlets)
+    // Inject print script
+    const printScript = `
+      <script>
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            window.print();
+            window.close();
+          }, 500);
+        });
+      </script>
+    `
+    const finalHtml = html.replace('</body>', `${printScript}</body>`)
+
     doc.open()
-    doc.write(html)
+    doc.write(finalHtml)
     doc.close()
 
-    // Wait for content to render, then print
-    iframe.onload = () => {
-      setTimeout(() => {
-        iframe.contentWindow?.print()
-      }, 300)
-    }
-
-    // Fallback: trigger print after a short delay
+    // Fallback if load event doesn't fire (e.g. no external resources)
     setTimeout(() => {
-      iframe.contentWindow?.print()
-    }, 600)
+      if (iframe.contentWindow) {
+        iframe.contentWindow.print()
+      }
+    }, 1000)
+
   }, [outlets])
 
   return { printNota }

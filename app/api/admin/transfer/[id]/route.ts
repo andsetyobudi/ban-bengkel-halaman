@@ -21,6 +21,7 @@ export async function PATCH(
       pending: "diajukan",
       diterima: "dikirim",
       selesai: "diterima",
+      dibatalkan: "ditolak",
     }
 
     const dbStatus = statusMap[newStatus]
@@ -35,6 +36,23 @@ export async function PATCH(
 
     if (!transfer) {
       return NextResponse.json({ error: "Transfer tidak ditemukan." }, { status: 404 })
+    }
+
+    // Guard: aturan batalkan
+    // - hanya boleh jika masih "diajukan" (menunggu)
+    // - hanya boleh oleh user pengirim (outlet asal)
+    if (dbStatus === "ditolak") {
+      if (transfer.status !== "diajukan") {
+        return NextResponse.json({ error: "Transfer tidak bisa dibatalkan karena status sudah berubah." }, { status: 400 })
+      }
+      const uid = parseInt(userId, 10)
+      if (Number.isNaN(uid)) {
+        return NextResponse.json({ error: "User tidak valid." }, { status: 400 })
+      }
+      const user = await prisma.users.findUnique({ where: { id: uid } })
+      if (!user || user.id_outlet == null || user.id_outlet !== transfer.id_outlet_asal) {
+        return NextResponse.json({ error: "Anda tidak berhak membatalkan transfer ini." }, { status: 403 })
+      }
     }
 
     const updateData: {

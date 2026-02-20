@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode, type Dispatch, type SetStateAction } from "react"
+import { toast } from "sonner"
 
 export type Outlet = {
   id: string
@@ -83,7 +84,7 @@ export type TransferItem = {
   qty: number
 }
 
-export type TransferStatus = "pending" | "diterima" | "selesai"
+export type TransferStatus = "pending" | "diterima" | "selesai" | "dibatalkan"
 
 export type Transfer = {
   id: string
@@ -407,6 +408,7 @@ type OutletContextType = {
   isSuperAdmin: boolean
   availableOutlets: Outlet[]
   logout: () => void
+  reloadInitialData: () => Promise<void>
   products: ProductItem[]
   setProducts: Dispatch<SetStateAction<ProductItem[]>>
   decreaseProductStock: (productId: string, outletId: string, qty: number) => void
@@ -423,6 +425,7 @@ type OutletContextType = {
   updateCustomer: (id: string, name: string, phone: string, outletId: string) => void
   removeCustomer: (id: string) => void
   transfers: Transfer[]
+  setTransfers: React.Dispatch<React.SetStateAction<Transfer[]>>
   addTransfer: (fromOutletId: string, toOutletId: string, date: string, note: string, items: TransferItem[]) => void
   updateTransferStatus: (id: string, status: TransferStatus) => void
   piutang: PiutangItem[]
@@ -430,6 +433,12 @@ type OutletContextType = {
   transactions: TransactionRecord[]
   addTransaction: (tx: Omit<TransactionRecord, "id">) => TransactionRecord
   removeTransaction: (id: string) => void
+  addOutlet: (name: string, address: string) => Promise<void>
+  updateOutlet: (id: string, name: string, address: string) => Promise<void>
+  removeOutlet: (id: string) => Promise<void>
+  addAdmin: (name: string, email: string, role: UserRole, outletId?: string) => Promise<void>
+  updateAdmin: (id: string, name: string, email: string, role: UserRole, outletId?: string) => Promise<void>
+  removeAdmin: (id: string) => Promise<void>
   nextInvoiceNumber: () => string
 }
 
@@ -439,42 +448,52 @@ export function OutletProvider({ children }: { children: ReactNode }) {
   const [outlets, setOutlets] = useState<Outlet[]>(defaultOutlets)
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(defaultAdminUsers)
 
-  const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
-    if (typeof window === "undefined") return null
-    const stored = localStorage.getItem("carproban_user")
-    if (stored) {
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
+
+  const [selectedOutletId, setSelectedOutletIdRaw] = useState<string>("all")
+
+  // Load from localStorage on mount, lalu fetch data jika sudah login
+  useEffect(() => {
+    const savedUser = localStorage.getItem("carproban_user")
+    if (savedUser) {
       try {
-        return JSON.parse(stored) as AdminUser
+        setCurrentUser(JSON.parse(savedUser))
       } catch {
-        return null
+        // ignore
       }
     }
-    return null
-  })
+    const savedOutlet = localStorage.getItem("carproban_selected_outlet")
+    if (savedOutlet) {
+      setSelectedOutletIdRaw(savedOutlet)
+    }
+  }, [])
 
-  const [selectedOutletId, setSelectedOutletIdRaw] = useState<string>(() => {
-    if (typeof window === "undefined") return "all"
-    const stored = localStorage.getItem("carproban_selected_outlet")
-    return stored || "all"
-  })
+  // Helper: muat ulang seluruh data dari database (dipakai awal dan setelah CRUD penting)
+  const reloadInitialData = useCallback(async () => {
+    // Hanya fetch jika ada user yang login
+    const isLoggedIn = localStorage.getItem("carproban_admin")
+    if (!isLoggedIn) return
+    try {
+      const res = await fetch("/api/admin/initial-data")
+      const data = await res.json()
+      if (data.error) return
+      if (Array.isArray(data.outlets)) setOutlets(data.outlets)
+      if (Array.isArray(data.adminUsers)) setAdminUsers(data.adminUsers)
+      if (Array.isArray(data.products)) setProducts(data.products)
+      if (Array.isArray(data.customers)) setCustomers(data.customers)
+      if (Array.isArray(data.transfers)) setTransfers(data.transfers)
+      if (Array.isArray(data.piutang)) setPiutang(data.piutang)
+      if (Array.isArray(data.transactions)) setTransactions(data.transactions)
+      if (Array.isArray(data.brands)) setBrands(data.brands)
+      if (Array.isArray(data.categories)) setCategories(data.categories)
+    } catch {
+      // biarkan diam jika gagal, agar UI tetap jalan dengan data terakhir
+    }
+  }, [])
 
   useEffect(() => {
-    fetch("/api/admin/initial-data")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) return
-        if (Array.isArray(data.outlets)) setOutlets(data.outlets)
-        if (Array.isArray(data.adminUsers)) setAdminUsers(data.adminUsers)
-        if (Array.isArray(data.products)) setProducts(data.products)
-        if (Array.isArray(data.customers)) setCustomers(data.customers)
-        if (Array.isArray(data.transfers)) setTransfers(data.transfers)
-        if (Array.isArray(data.piutang)) setPiutang(data.piutang)
-        if (Array.isArray(data.transactions)) setTransactions(data.transactions)
-        if (Array.isArray(data.brands)) setBrands(data.brands)
-        if (Array.isArray(data.categories)) setCategories(data.categories)
-      })
-      .catch(() => {})
-  }, [])
+    void reloadInitialData()
+  }, [reloadInitialData])
 
   const isSuperAdmin = currentUser?.role === "super_admin"
 
@@ -502,12 +521,14 @@ export function OutletProvider({ children }: { children: ReactNode }) {
       } else {
         setSelectedOutletId("all")
       }
+      // Langsung muat data setelah login berhasil
+      void reloadInitialData()
     } else {
       localStorage.removeItem("carproban_admin")
       localStorage.removeItem("carproban_user")
       localStorage.removeItem("carproban_selected_outlet")
     }
-  }, [setSelectedOutletId])
+  }, [setSelectedOutletId, reloadInitialData])
 
   const logout = useCallback(() => {
     handleSetCurrentUser(null)
@@ -527,41 +548,275 @@ export function OutletProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
-  // Brands CRUD
+  // Brands CRUD (disimpan di database via API)
   const [brands, setBrands] = useState<BrandItem[]>(initialBrands)
 
   const addBrand = useCallback((name: string) => {
-    setBrands((prev) => {
-      const nextNum = prev.length + 1
-      return [...prev, { id: `BRD-${String(nextNum).padStart(3, "0")}`, name }]
-    })
-  }, [])
+    void (async () => {
+      try {
+        const trimmed = name.trim()
+        if (!trimmed) {
+          toast.error("Nama merek wajib diisi.")
+          return
+        }
+        const res = await fetch("/api/admin/brands", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menambah merek.")
+          return
+        }
+        toast.success("Merek berhasil ditambahkan.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   const updateBrand = useCallback((id: string, name: string) => {
-    setBrands((prev) => prev.map((b) => (b.id === id ? { ...b, name } : b)))
-  }, [])
+    void (async () => {
+      try {
+        const trimmed = name.trim()
+        if (!trimmed) {
+          toast.error("Nama merek wajib diisi.")
+          return
+        }
+        const res = await fetch(`/api/admin/brands/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal mengubah merek.")
+          return
+        }
+        toast.success("Merek berhasil diubah.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   const removeBrand = useCallback((id: string) => {
-    setBrands((prev) => prev.filter((b) => b.id !== id))
-  }, [])
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/brands/${id}`, {
+          method: "DELETE",
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menghapus merek.")
+          return
+        }
+        toast.success("Merek berhasil dihapus.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
-  // Customers CRUD
+  // Customers CRUD (disimpan di database via API)
   const [customers, setCustomers] = useState<CustomerItem[]>(initialCustomers)
 
   const addCustomer = useCallback((name: string, phone: string, outletId: string) => {
-    setCustomers((prev) => {
-      const nextNum = prev.length + 1
-      return [...prev, { id: `CST-${String(nextNum).padStart(3, "0")}`, name, phone, outletId }]
-    })
-  }, [])
+    void (async () => {
+      try {
+        const trimmedName = name.trim()
+        const trimmedPhone = phone.trim()
+        if (!trimmedName || !trimmedPhone || !outletId) {
+          toast.error("Nama, nomor HP, dan outlet wajib diisi.")
+          return
+        }
+        const res = await fetch("/api/admin/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: trimmedName,
+            phone: trimmedPhone,
+            outletId,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menambah pelanggan.")
+          return
+        }
+        toast.success("Pelanggan berhasil ditambahkan.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   const updateCustomer = useCallback((id: string, name: string, phone: string, outletId: string) => {
-    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, name, phone, outletId } : c)))
-  }, [])
+    void (async () => {
+      try {
+        const trimmedName = name.trim()
+        const trimmedPhone = phone.trim()
+        if (!trimmedName || !trimmedPhone || !outletId) {
+          toast.error("Nama, nomor HP, dan outlet wajib diisi.")
+          return
+        }
+        const res = await fetch(`/api/admin/customers/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: trimmedName,
+            phone: trimmedPhone,
+            outletId,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal mengubah pelanggan.")
+          return
+        }
+        toast.success("Pelanggan berhasil diubah.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   const removeCustomer = useCallback((id: string) => {
-    setCustomers((prev) => prev.filter((c) => c.id !== id))
-  }, [])
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/customers/${id}`, {
+          method: "DELETE",
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menghapus pelanggan.")
+          return
+        }
+        toast.success("Pelanggan berhasil dihapus.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
+
+  // Outlets CRUD
+  const addOutlet = useCallback(async (name: string, address: string) => {
+    try {
+      const res = await fetch("/api/admin/outlets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, address }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal menambahkan outlet.")
+        return
+      }
+      toast.success("Outlet berhasil ditambahkan.")
+      await reloadInitialData()
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+  }, [reloadInitialData])
+
+  const updateOutlet = useCallback(async (id: string, name: string, address: string) => {
+    try {
+      const res = await fetch(`/api/admin/outlets/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, address }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal mengubah outlet.")
+        return
+      }
+      toast.success("Outlet berhasil diubah.")
+      await reloadInitialData()
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+  }, [reloadInitialData])
+
+  const removeOutlet = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/outlets/${id}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal menghapus outlet.")
+        return
+      }
+      toast.success("Outlet berhasil dihapus.")
+      await reloadInitialData()
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+  }, [reloadInitialData])
+
+  // Admin Users CRUD
+  const addAdmin = useCallback(async (name: string, email: string, role: UserRole, outletId?: string) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, role, outletId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal menambahkan admin.")
+        return
+      }
+      toast.success("Admin berhasil ditambahkan.")
+      await reloadInitialData()
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+  }, [reloadInitialData])
+
+  const updateAdmin = useCallback(async (id: string, name: string, email: string, role: UserRole, outletId?: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, role, outletId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal mengubah admin.")
+        return
+      }
+      toast.success("Admin berhasil diubah.")
+      await reloadInitialData()
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+  }, [reloadInitialData])
+
+  const removeAdmin = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? "Gagal menghapus admin.")
+        return
+      }
+      toast.success("Admin berhasil dihapus.")
+      await reloadInitialData()
+    } catch {
+      toast.error("Koneksi gagal.")
+    }
+  }, [reloadInitialData])
 
   // Transfer CRUD
   const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers)
@@ -593,17 +848,42 @@ export function OutletProvider({ children }: { children: ReactNode }) {
   const [piutang, setPiutang] = useState<PiutangItem[]>(initialPiutang)
 
   const lunaskanPiutang = useCallback((id: string) => {
-    setPiutang((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, paid: p.total, status: "lunas" as const } : p
-      )
-    )
-  }, [])
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/piutang/${id}`, {
+          method: "PATCH",
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          toast.error(data.error ?? "Gagal melunasi piutang.")
+          return
+        }
+        toast.success("Piutang berhasil dilunasi.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Gagal terhubung ke server.")
+      }
+    })()
+  }, [reloadInitialData])
 
   // Transactions
   const [transactions, setTransactions] = useState<TransactionRecord[]>(initialTransactions)
 
   const nextInvoiceNumber = useCallback(() => {
+    const year = new Date().getFullYear()
+    const count = transactions.length + 1
+    return `INV-${year}-${String(count).padStart(4, "0")}`
+  }, [transactions.length])
+
+  // Fetch the next invoice number from DB (async version)
+  const fetchNextInvoiceNumber = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/transaksi?action=next-invoice")
+      const data = await res.json()
+      if (data.invoice) return data.invoice as string
+    } catch {
+      // fallback to local
+    }
     const year = new Date().getFullYear()
     const count = transactions.length + 1
     return `INV-${year}-${String(count).padStart(4, "0")}`
@@ -645,34 +925,111 @@ export function OutletProvider({ children }: { children: ReactNode }) {
   }, [transactions.length, decreaseProductStock])
 
   const removeTransaction = useCallback((id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/transaksi/${id}`, {
+          method: "DELETE",
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menghapus transaksi.")
+          return
+        }
+        toast.success("Transaksi berhasil dihapus.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
-  // Categories CRUD
+  // Categories CRUD (disimpan di database via API)
   const [categories, setCategories] = useState<CategoryItem[]>(initialCategories)
 
   const addCategory = useCallback((name: string) => {
-    setCategories((prev) => {
-      const nextNum = prev.length + 1
-      return [...prev, { id: `CAT-${String(nextNum).padStart(3, "0")}`, name }]
-    })
-  }, [])
+    void (async () => {
+      try {
+        const trimmed = name.trim()
+        if (!trimmed) {
+          toast.error("Nama kategori wajib diisi.")
+          return
+        }
+        const res = await fetch("/api/admin/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menambah kategori.")
+          return
+        }
+        toast.success("Kategori berhasil ditambahkan.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   const updateCategory = useCallback((id: string, name: string) => {
-    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name } : c)))
-  }, [])
+    void (async () => {
+      try {
+        const trimmed = name.trim()
+        if (!trimmed) {
+          toast.error("Nama kategori wajib diisi.")
+          return
+        }
+        const res = await fetch(`/api/admin/categories/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal mengubah kategori.")
+          return
+        }
+        toast.success("Kategori berhasil diubah.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   const removeCategory = useCallback((id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id))
-  }, [])
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/categories/${id}`, {
+          method: "DELETE",
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error((data as any)?.error ?? "Gagal menghapus kategori.")
+          return
+        }
+        toast.success("Kategori berhasil dihapus.")
+        await reloadInitialData()
+      } catch {
+        toast.error("Koneksi gagal.")
+      }
+    })()
+  }, [reloadInitialData])
 
   return (
     <OutletContext.Provider
       value={{
         outlets,
         setOutlets,
+        addOutlet,
+        updateOutlet,
+        removeOutlet,
         adminUsers,
         setAdminUsers,
+        addAdmin,
+        updateAdmin,
+        removeAdmin,
         currentUser,
         setCurrentUser: handleSetCurrentUser,
         selectedOutletId,
@@ -681,8 +1038,10 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         availableOutlets,
         logout,
+        reloadInitialData,
         products,
         setProducts,
+
         decreaseProductStock,
         brands,
         addBrand,
@@ -697,8 +1056,10 @@ export function OutletProvider({ children }: { children: ReactNode }) {
         updateCustomer,
         removeCustomer,
         transfers,
+        setTransfers,
         addTransfer,
         updateTransferStatus,
+
         piutang,
         lunaskanPiutang,
         transactions,

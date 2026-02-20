@@ -26,7 +26,7 @@ export function Navbar() {
             <span className="text-lg font-bold text-primary-foreground">C</span>
           </div>
           <span className="font-heading text-xl font-bold tracking-tight text-foreground">
-            CarProBan
+            CARPROBAN
           </span>
         </Link>
 
@@ -48,12 +48,6 @@ export function Navbar() {
             <Link href={WA_LINK} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="mr-2 h-4 w-4" />
               WhatsApp
-            </Link>
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link href="/admin/login">
-              <Lock className="mr-2 h-4 w-4" />
-              Admin
             </Link>
           </Button>
         </div>
@@ -87,12 +81,6 @@ export function Navbar() {
               <Link href={WA_LINK} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 WhatsApp
-              </Link>
-            </Button>
-            <Button size="sm" variant="outline" className="w-full" asChild>
-              <Link href="/admin/login">
-                <Lock className="mr-2 h-4 w-4" />
-                Admin
               </Link>
             </Button>
           </div>

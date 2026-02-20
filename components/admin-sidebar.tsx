@@ -54,45 +54,47 @@ export function AdminSidebar({
     {
       title: null,
       links: [
-        { label: "Ringkasan", href: "/admin", icon: LayoutDashboard },
+        { label: "Ringkasan", href: "/adminpanel", icon: LayoutDashboard },
       ],
     },
     {
       title: "Stok & Inventaris",
       links: [
-        { label: "Daftar Produk", href: "/admin/produk", icon: Package },
+        { label: "Daftar Produk", href: "/adminpanel/produk", icon: Package },
         ...(!showSuperAdminUI
-          ? [{ label: "Transfer Barang", href: "/admin/transfer", icon: ArrowLeftRight }]
+          ? [{ label: "Transfer Barang", href: "/adminpanel/transfer", icon: ArrowLeftRight }]
           : []),
-        { label: "Riwayat Transfer", href: "/admin/transfer/riwayat", icon: History },
-        { label: "Cetak Laporan", href: "/admin/laporan", icon: Printer },
+        { label: "Riwayat Transfer", href: "/adminpanel/transfer/riwayat", icon: History },
+        { label: "Cetak Laporan", href: "/adminpanel/laporan", icon: Printer },
       ],
     },
     {
       title: "Penjualan",
       links: [
-        { label: "Transaksi Baru", href: "/admin/transaksi", icon: ShoppingCart },
-        { label: "Riwayat Transaksi", href: "/admin/transaksi/riwayat", icon: Receipt },
-        { label: "Manajemen Piutang", href: "/admin/piutang", icon: CreditCard },
-        { label: "Data Pelanggan", href: "/admin/pelanggan", icon: Users },
+        ...(!showSuperAdminUI
+          ? [{ label: "Transaksi Baru", href: "/adminpanel/transaksi", icon: ShoppingCart }]
+          : []),
+        { label: "Riwayat Transaksi", href: "/adminpanel/transaksi/riwayat", icon: Receipt },
+        { label: "Manajemen Piutang", href: "/adminpanel/piutang", icon: CreditCard },
+        { label: "Data Pelanggan", href: "/adminpanel/pelanggan", icon: Users },
       ],
     },
     ...(showSuperAdminUI
       ? [
-          {
-            title: "Master Data",
-            links: [
-              { label: "Kelola Outlet", href: "/admin/outlets", icon: Building2 },
-              { label: "Kategori & Merek", href: "/admin/kategori-merek", icon: Tags },
-            ],
-          },
-        ]
+        {
+          title: "Master Data",
+          links: [
+            { label: "Kelola Outlet", href: "/adminpanel/outlets", icon: Building2 },
+            { label: "Kategori & Merek", href: "/adminpanel/kategori-merek", icon: Tags },
+          ],
+        },
+      ]
       : []),
   ]
 
   const handleLogout = () => {
     logout()
-    window.location.href = "/admin/login"
+    window.location.href = "/adminpanel/login"
   }
 
   return (
@@ -139,17 +141,26 @@ export function AdminSidebar({
               <X className="h-5 w-5" />
             </button>
           </div>
-          <Badge
-            variant="secondary"
-            className={cn(
-              "mt-2.5 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5",
-              showSuperAdminUI
-                ? "bg-primary/10 text-primary"
-                : "bg-accent/30 text-accent-foreground"
-            )}
-          >
-            {showSuperAdminUI ? "Super Admin" : "Admin Outlet"}
-          </Badge>
+          <div className="mt-2.5 flex items-center justify-between">
+            <Badge
+              variant="secondary"
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5",
+                showSuperAdminUI
+                  ? "bg-primary/10 text-primary"
+                  : "bg-accent/30 text-accent-foreground"
+              )}
+            >
+              {showSuperAdminUI ? "Super Admin" : "Admin Outlet"}
+            </Badge>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Keluar
+            </button>
+          </div>
         </div>
 
         {/* Outlet Switcher */}
@@ -224,25 +235,6 @@ export function AdminSidebar({
             ))}
           </div>
         </nav>
-
-        {/* Footer */}
-        <div className="flex flex-col gap-0.5 border-t border-border px-4 py-3">
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" asChild>
-            <Link href="/">
-              <Home className="h-4 w-4" />
-              Halaman Utama
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Keluar
-          </Button>
-        </div>
       </aside>
     </>
   )
